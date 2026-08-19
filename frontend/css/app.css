@@ -452,10 +452,24 @@ svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.55;strok
 
 @media (max-width:600px){
   :root{
-    /* Screenshot: 902 CSS px screen - ~120 px native preview chrome = ~782 px. */
-    --crm-shell-h:min(782px, calc(100svh - 120px));
-    --crm-header-h:74px;
-    --crm-bottom-h:76px;
+    /* Telegram provides stable viewport and safe-area values through its SDK. */
+    --crm-shell-h:var(--tg-viewport-stable-height,var(--tg-viewport-height,min(782px, calc(100svh - 120px))));
+    --crm-tg-safe-area-top:0px;
+    --crm-tg-safe-area-right:0px;
+    --crm-tg-safe-area-bottom:0px;
+    --crm-tg-safe-area-left:0px;
+    --crm-tg-content-safe-area-top:0px;
+    --crm-tg-content-safe-area-right:0px;
+    --crm-tg-content-safe-area-bottom:0px;
+    --crm-tg-content-safe-area-left:0px;
+    --crm-safe-top:max(env(safe-area-inset-top,0px),var(--tg-safe-area-inset-top,0px),var(--tg-content-safe-area-inset-top,0px),var(--crm-tg-safe-area-top),var(--crm-tg-content-safe-area-top));
+    --crm-safe-right:max(env(safe-area-inset-right,0px),var(--tg-safe-area-inset-right,0px),var(--tg-content-safe-area-inset-right,0px),var(--crm-tg-safe-area-right),var(--crm-tg-content-safe-area-right));
+    --crm-safe-bottom:max(env(safe-area-inset-bottom,0px),var(--tg-safe-area-inset-bottom,0px),var(--tg-content-safe-area-inset-bottom,0px),var(--crm-tg-safe-area-bottom),var(--crm-tg-content-safe-area-bottom));
+    --crm-safe-left:max(env(safe-area-inset-left,0px),var(--tg-safe-area-inset-left,0px),var(--tg-content-safe-area-inset-left,0px),var(--crm-tg-safe-area-left),var(--crm-tg-content-safe-area-left));
+    --crm-header-content-h:74px;
+    --crm-header-h:calc(var(--crm-header-content-h) + var(--crm-safe-top));
+    --crm-bottom-content-h:76px;
+    --crm-bottom-h:calc(var(--crm-bottom-content-h) + var(--crm-safe-bottom));
   }
 
   html,body{
@@ -502,7 +516,7 @@ svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.55;strok
     min-height:var(--crm-header-h) !important;
     max-height:var(--crm-header-h) !important;
     margin:0 !important;
-    padding:8px 16px !important;
+    padding:calc(8px + var(--crm-safe-top)) calc(16px + var(--crm-safe-right)) 8px calc(16px + var(--crm-safe-left)) !important;
     background:#fff !important;
     border-bottom:1px solid var(--border) !important;
   }
@@ -518,7 +532,7 @@ svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.55;strok
     min-height:var(--crm-bottom-h) !important;
     max-height:var(--crm-bottom-h) !important;
     margin:0 !important;
-    padding:5px 24px 8px !important;
+    padding:5px calc(24px + var(--crm-safe-right)) calc(8px + var(--crm-safe-bottom)) calc(24px + var(--crm-safe-left)) !important;
     background:#fff !important;
     border-top:1px solid var(--border) !important;
     box-shadow:none !important;
@@ -2795,8 +2809,8 @@ button,a,.card.clickable,.stage-chip,.tool{touch-action:manipulation;-webkit-tap
 .calendar-event-row>svg{color:#92979e !important}
 
 @media(max-width:600px){
-  :root{--crm-header-h:68px}
-  .topbar{height:var(--crm-header-h) !important;min-height:var(--crm-header-h) !important;max-height:var(--crm-header-h) !important;padding:7px 14px !important}
+  :root{--crm-header-content-h:68px;--crm-header-h:calc(var(--crm-header-content-h) + var(--crm-safe-top))}
+  .topbar{height:var(--crm-header-h) !important;min-height:var(--crm-header-h) !important;max-height:var(--crm-header-h) !important;padding:calc(7px + var(--crm-safe-top)) calc(14px + var(--crm-safe-right)) 7px calc(14px + var(--crm-safe-left)) !important}
   .site-logo-mark{width:38px !important;height:38px !important}
   .site-logo-name{font-size:11.5px !important}
   .site-logo-sub{font-size:5.8px !important}
