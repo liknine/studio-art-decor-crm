@@ -1,0 +1,80 @@
+const CRMDataLayer={
+  adapter:null,
+  revision:'',
+  status:'idle',
+  pendingSave:Promise.resolve(),
+  dirty:false,
+  lastError:null,
+  errorHandler:null,
+  saveSequence:0,
+  savedSequence:0,
+  setErrorHandler(handler){
+    this.errorHandler=typeof handler==='function'?handler:null;
+  },
+  reportError(operation,err){
+    const error=err instanceof Error?err:new Error(String(err||'Unknown CRM data error'));
+    error.dataOperation=operation;
+    this.status='error';
+    this.lastError=error;
+    console.error(operation==='load'?'CRM data bootstrap failed':'CRM save failed',error);
+    try{this.errorHandler?.(error,operation)}catch(handlerError){
+      console.error('CRM error notification failed',handlerError);
+    }
+    return error;
+  },
+  chooseAdapter(){
+    return CRM_DATA_CONFIG.mode==='http'
+      ? new HttpCRMAdapter(CRM_DATA_CONFIG)
+      : new LocalCRMAdapter();
+  },
+  async init(defaultStages){
+    this.adapter=this.chooseAdapter();
+    this.status='loading';
+    try{
+      const loaded=await this.adapter.load(defaultStages);
+      this.revision=loaded.revision||'';
+      this.status='ready';
+      this.lastError=null;
+      return normalizeStages(loaded.stages);
+    }catch(err){
+      throw this.reportError('load',err);
+    }
+  },
+  save(currentStages){
+    if(!this.adapter || this.status==='idle' || this.status==='loading'){
+      const error=new Error('CRM data layer is not ready to save');
+      error.name='CRMDataLayerStateError';
+      error.code='CRM_NOT_READY';
+      return Promise.reject(this.reportError('save',error));
+    }
+    const snapshot=crmSnapshot(currentStages);
+    const sequence=++this.saveSequence;
+    this.dirty=true;
+    this.pendingSave=this.pendingSave
+      .catch(()=>{})
+      .then(async()=>{
+        try{
+          const result=await this.adapter.save(snapshot);
+          this.revision=result?.revision||this.revision;
+          this.savedSequence=Math.max(this.savedSequence,sequence);
+          this.dirty=this.savedSequence<this.saveSequence;
+          this.status=this.dirty?'saving':'ready';
+          if(!this.dirty)this.lastError=null;
+          return result;
+        }catch(err){
+          this.dirty=true;
+          throw this.reportError('save',err);
+        }
+      });
+    return this.pendingSave;
+  },
+  async flush(){
+    return await this.pendingSave;
+  }
+};
+
+/* Compatibility façade: UI calls this, not localStorage/fetch directly. */
+function persistCRM(){
+  CRMDataLayer.save(stages).catch(()=>{/* reportError already recorded and notified the failure. */});
+  return true;
+}

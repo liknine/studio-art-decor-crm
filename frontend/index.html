@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Studio Art Decor CRM</title>
+<script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<meta name="crm-build" content="v59-frontend-core-api-ready">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="./css/app.css">
+</head>
+
+<body>
+<div class="wrap">
+<section class="app">
+
+<header class="topbar">
+  <button class="site-brand brand-home" id="brandHome" aria-label="На главную воронки">
+    <svg class="site-logo-mark" viewBox="0 0 54 54" aria-hidden="true">
+      <circle cx="27" cy="27" r="23.5"></circle>
+      <text x="27" y="33.2" text-anchor="middle">SA</text>
+    </svg>
+    <span class="site-logo-copy">
+      <span class="site-logo-name">STUDIO ART DECOR</span>
+      <span class="site-logo-sub">EVENT &amp; WEDDING DECOR</span>
+    </span>
+  </button>
+  <button class="top-action" id="searchBtn" aria-label="Поиск">
+    <svg viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="6.5"></circle>
+      <path d="m16 16 4 4"></path>
+    </svg>
+  </button>
+</header>
+
+<!-- PAGE 1: EVENTS -->
+<section class="page active" id="eventsPage">
+  <div class="toolbar">
+    <button class="tool active" data-view="board">
+      <svg viewBox="0 0 24 24"><rect x="4" y="5" width="6" height="14" rx="2"></rect><rect x="14" y="5" width="6" height="14" rx="2"></rect></svg>
+      Воронка
+    </button>
+    <button class="tool" data-view="calendar">
+      <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+      Календарь
+    </button>
+  </div>
+
+  <div class="stage-switcher" id="stageSwitcher">
+    <div class="stage-rail" id="stageRail" aria-label="Этапы воронки"></div>
+    <div class="swipe-hint" id="swipeHint" aria-hidden="true"></div>
+  </div>
+
+  <section class="stage-frame" id="stageFrame">
+    <div class="stage-track" id="stageTrack"><section class="stage-page" data-index="0">
+      <div class="stage-head"><div class="stage-title"><span class="stage-dot" style="background:#b8bbc0"></span><strong>Новый заказ</strong><span class="count">2</span></div></div>
+      <div class="stage-list"><div class="card clickable js-open-detail" data-stage-index="0" data-event-index="0">
+      <div class="card-head">
+        <div class="avatar">Н</div>
+        <div class="card-name"><strong>Новая заявка с сайта</strong><span>ещё не обработана</span></div>
+        <button class="bell js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>28 августа 2026</span><span class="right">—</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">Н</span>Анна · +375 29 000-00-00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Falcon Club</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">Клиент просит связаться после 18:00. Пока не присылать финальные варианты без звонка.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">—</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>0</span>
+          <button class="advance" data-stage-index="0" data-event-index="0"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div><div class="card clickable js-open-detail" data-stage-index="0" data-event-index="1">
+      <div class="card-head">
+        <div class="avatar">N</div>
+        <div class="card-name"><strong>Корпоратив NOVA</strong><span>заявка с сайта</span></div>
+        <button class="bell js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>3 сентября 2026</span><span class="right">19:00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">N</span>Ирина · +375 44 000-00-00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Robinson Club</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">Финальное решение принимает Ирина. Все согласования отправлять одним сообщением.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">—</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>0</span>
+          <button class="advance" data-stage-index="0" data-event-index="1"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div></div>
+    </section>
+<section class="stage-page" data-index="1">
+      <div class="stage-head"><div class="stage-title"><span class="stage-dot" style="background:#4385dd"></span><strong>Переговоры</strong><span class="count">3</span></div></div>
+      <div class="stage-list"><div class="card clickable js-open-detail" data-stage-index="1" data-event-index="0">
+      <div class="card-head">
+        <div class="avatar">А</div>
+        <div class="card-name"><strong>Свадьба Анны и Максима</strong><span>Falcon Club</span></div>
+        <button class="bell has js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>24 августа 2026</span><span class="right">14:00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">А</span>Анна · +375 29 000-00-00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Falcon Club</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">Невеста очень переживает из-за оттенков. Все цветовые решения подтверждать перед финальным согласованием.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">546 BYN</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>3</span>
+          <button class="advance" data-stage-index="1" data-event-index="0"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div><div class="card clickable js-open-detail" data-stage-index="1" data-event-index="1">
+      <div class="card-head">
+        <div class="avatar">С</div>
+        <div class="card-name"><strong>День рождения Софии</strong><span>Prime Hall</span></div>
+        <button class="bell has js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>31 августа 2026</span><span class="right">17:30</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">С</span>Елена · +375 33 000-00-00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Prime Hall</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">Мама именинницы отвечает за тайминг. В день монтажа писать только ей.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">546 BYN</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>1</span>
+          <button class="advance" data-stage-index="1" data-event-index="1"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div><div class="card clickable js-open-detail" data-stage-index="1" data-event-index="2">
+      <div class="card-head">
+        <div class="avatar">М</div>
+        <div class="card-name"><strong>Свадьба Марии и Ильи</strong><span>Villa Riviera</span></div>
+        <button class="bell has js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>6 сентября 2026</span><span class="right">15:00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">М</span>Мария · +375 25 000-00-00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Villa Riviera</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">Клиенты часто меняют решения. После каждой встречи фиксировать итог письменно.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">—</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>2</span>
+          <button class="advance" data-stage-index="1" data-event-index="2"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div></div>
+    </section>
+<section class="stage-page" data-index="2">
+      <div class="stage-head"><div class="stage-title"><span class="stage-dot" style="background:#7765d8"></span><strong>Составляем ТЗ</strong><span class="count">2</span></div></div>
+      <div class="stage-list"><div class="card clickable js-open-detail" data-stage-index="2" data-event-index="0">
+      <div class="card-head">
+        <div class="avatar">П</div>
+        <div class="card-name"><strong>Презентация коллекции</strong><span>City Hall</span></div>
+        <button class="bell has js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>27 августа 2026</span><span class="right">18:00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">П</span>Юлия · +375 29 000-00-00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>City Hall</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">У заказчика строгий брендбук. Любые визуальные изменения сначала отправлять на согласование.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">546 BYN</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>1</span>
+          <button class="advance" data-stage-index="2" data-event-index="0"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div><div class="card clickable js-open-detail" data-stage-index="2" data-event-index="1">
+      <div class="card-head">
+        <div class="avatar">W</div>
+        <div class="card-name"><strong>Wedding Dinner</strong><span>Marriott</span></div>
+        <button class="bell has js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>5 сентября 2026</span><span class="right">18:30</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">W</span>Кристина · +375 44 111-11-11</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Marriott</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">Контакт со стороны площадки отвечает медленно. Вопросы по доступу решать заранее.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">546 BYN</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>2</span>
+          <button class="advance" data-stage-index="2" data-event-index="1"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div></div>
+    </section>
+<section class="stage-page" data-index="3">
+      <div class="stage-head"><div class="stage-title"><span class="stage-dot" style="background:#ef9847"></span><strong>Подготовительные работы</strong><span class="count">2</span></div></div>
+      <div class="stage-list"><div class="card clickable js-open-detail" data-stage-index="3" data-event-index="0">
+      <div class="card-head">
+        <div class="avatar">В</div>
+        <div class="card-name"><strong>Выездная регистрация</strong><span>Усадьба «Сосны»</span></div>
+        <button class="bell has js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>29 августа 2026</span><span class="right">11:00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">В</span>Мария · +375 29 000-00-00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Усадьба «Сосны»</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">Заезд на площадку только через служебный въезд. Пропуск оформить за день.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">546 BYN</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>2</span>
+          <button class="advance" data-stage-index="3" data-event-index="0"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div><div class="card clickable js-open-detail" data-stage-index="3" data-event-index="1">
+      <div class="card-head">
+        <div class="avatar">B</div>
+        <div class="card-name"><strong>Beauty Brand Launch</strong><span>Loft 8</span></div>
+        <button class="bell has js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>2 сентября 2026</span><span class="right">16:00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">B</span>Алина · +375 29 222-22-22</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Loft 8</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">На площадке ограничено время на разгрузку — максимум 30 минут.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">546 BYN</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>1</span>
+          <button class="advance" data-stage-index="3" data-event-index="1"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div></div>
+    </section>
+<section class="stage-page" data-index="4">
+      <div class="stage-head"><div class="stage-title"><span class="stage-dot" style="background:#28a66f"></span><strong>Монтаж</strong><span class="count">1</span></div></div>
+      <div class="stage-list"><div class="card clickable js-open-detail" data-stage-index="4" data-event-index="0">
+      <div class="card-head">
+        <div class="avatar">Л</div>
+        <div class="card-name"><strong>Летний корпоратив</strong><span>Green Park</span></div>
+        <button class="bell has js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>22 августа 2026</span><span class="right">10:00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">Л</span>Ольга · +375 29 333-33-33</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Green Park</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">Координатор на площадке — Ольга. Все спорные моменты решать через неё.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">546 BYN</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>1</span>
+          <button class="advance" data-stage-index="4" data-event-index="0"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div></div>
+    </section>
+<section class="stage-page" data-index="5">
+      <div class="stage-head"><div class="stage-title"><span class="stage-dot" style="background:#4aa5b5"></span><strong>Демонтаж</strong><span class="count">1</span></div></div>
+      <div class="stage-list"><div class="card clickable js-open-detail" data-stage-index="5" data-event-index="0">
+      <div class="card-head">
+        <div class="avatar">P</div>
+        <div class="card-name"><strong>Private Dinner</strong><span>Astoria Riverside</span></div>
+        <button class="bell has js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>21 августа 2026</span><span class="right">23:30</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">P</span>Дарья · +375 29 444-44-44</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Astoria Riverside</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">Демонтаж можно начинать только после сигнала администратора площадки.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">546 BYN</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>1</span>
+          <button class="advance" data-stage-index="5" data-event-index="0"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="m8.5 12 2.2 2.2L15.5 9.5"></path></svg>Далее</button>
+        </div>
+      </div>
+    </div></div>
+    </section>
+<section class="stage-page" data-index="6">
+      <div class="stage-head"><div class="stage-title"><span class="stage-dot" style="background:#76a071"></span><strong>Закрыт</strong><span class="count">1</span></div></div>
+      <div class="stage-list"><div class="card clickable js-open-detail" data-stage-index="6" data-event-index="0">
+      <div class="card-head">
+        <div class="avatar">Е</div>
+        <div class="card-name"><strong>Свадьба Екатерины и Павла</strong><span>Riviera Country Club</span></div>
+        <button class="bell js-reminder" aria-label="Напоминание"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></button>
+      </div>
+      <div class="card-body">
+        <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>16 августа 2026</span><span class="right">15:00</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><span class="contact-pill"><span class="contact-avatar">Е</span>Екатерина · +375 29 555-55-55</span></div>
+        <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>Riviera Country Club</span></div>
+        <div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">Клиент попросил сохранить контакты подрядчиков для будущих мероприятий.</span></div>
+        <div class="card-footer">
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4"></path></svg><span class="footer-money">546 BYN</span></span>
+          <span class="footer-item"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path></svg>0</span>
+          
+        </div>
+      </div>
+    </div></div>
+    </section></div>
+  </section>
+
+  <section class="calendar" id="calendar">
+    <div class="calendar-toolbar">
+      <label class="calendar-month-control" aria-label="Выбрать месяц">
+        <strong id="calendarMonthLabel">Август 2026</strong>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"></path></svg>
+        <input type="month" id="calendarMonthPicker" value="2026-08" aria-label="Выбрать месяц">
+      </label>
+      <div class="calendar-toolbar-actions">
+        <button class="calendar-today" id="calendarToday">Сегодня</button>
+        <button class="calendar-arrow" id="calendarPrev" aria-label="Предыдущий месяц">
+          <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg>
+        </button>
+        <button class="calendar-arrow" id="calendarNext" aria-label="Следующий месяц">
+          <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="calendar-grid dynamic" id="dynamicCalendarGrid"></div>
+
+    <div class="calendar-selected">
+      <div class="calendar-selected-head">
+        <strong id="calendarSelectedLabel">24 августа</strong>
+        <span id="calendarSelectedCount">1 мероприятие</span>
+      </div>
+      <div class="calendar-event-list" id="calendarSelectedEvents"></div>
+    </div>
+  </section>
+</section>
+
+<!-- PAGE 2: RENTAL -->
+<section class="page" id="rentalPage">
+  <div class="page-inner">
+    <div class="page-title">
+      <div>
+        <h2>Аренда</h2>
+        <p>Доступность реквизита по дате</p>
+      </div>
+    </div>
+
+    <div class="date-selector">
+      <label class="rental-date-control">
+        <span class="rental-date-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg></span>
+        <span class="rental-date-label">Дата аренды</span>
+        <input type="date" value="2026-08-24" id="rentalDate">
+      </label>
+    </div>
+
+    <div class="rental-tools">
+      <label class="rental-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+        <input id="rentalSearch" placeholder="Найти позицию">
+      </label>
+      <div class="rental-filters" id="rentalFilters" aria-label="Категории аренды"></div>
+    </div>
+
+    <div class="list" id="rentalList"></div>
+  </div>
+</section>
+
+<!-- PAGE 3: EVENT -->
+<section class="page" id="eventPage">
+  <div class="page-inner">
+    <div class="page-title">
+      <button class="back" data-back="eventsPage">
+        <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg>
+      </button>
+
+      <div class="event-title-copy" style="flex:1;min-width:0">
+        <h2 id="eventPageTitle">Свадьба Анны и Максима</h2>
+        <div class="event-title-meta-line" id="eventTitleMeta" hidden>
+          <p id="eventPageSub" hidden></p>
+          <span class="priority-badge priority-normal" id="eventPriorityBadge" hidden>Обычный</span>
+        </div>
+      </div>
+
+      <div class="event-title-actions">
+        <button class="icon-action" id="openEditEvent" aria-label="Редактировать">
+          <svg class="icon-pencil" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+          </svg>
+        </button>
+
+        <button class="icon-action" id="openReminders" aria-label="Напоминания">
+          <svg viewBox="0 0 24 24">
+            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+            <path d="M10 21h4"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="event-hero" id="eventHeroCard">
+      <div class="event-fields">
+        <div class="field"><span>Дата и время</span><strong id="eventDate">24.08.2026 · 14:00</strong></div>
+        <div class="field"><span>Место</span><strong id="eventPlace">Falcon Club</strong></div>
+        <div class="field"><span>Контакт</span><strong>
+          <a class="event-contact-call" id="eventContactCall" href="tel:+375290000000">
+            <span class="contact-avatar" id="eventContactAvatar">А</span>
+            <span class="event-contact-copy" id="eventContact">Анна · +375 29 000-00-00</span>
+          </a>
+        </strong></div>
+      </div>
+
+      <div class="event-note" id="eventNote">
+        <div class="event-note-label">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg>
+          Комментарий
+        </div>
+        <p id="eventComment">Невеста переживает из-за оттенков. Все цветовые решения подтверждать перед финальным согласованием.</p>
+      </div>
+
+      <div class="event-quick-actions">
+        <a class="event-quick" id="callClient" href="tel:+375290000000">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3.8 9 3l2 5-2.2 1.2a14.8 14.8 0 0 0 6 6L16 13l5 2-.8 2.4c-.5 1.4-1.9 2.2-3.3 1.9C10.5 18 6 13.5 4.7 7.1 4.4 5.7 5.2 4.3 6.6 3.8Z"></path></svg>
+          <span>Позвонить</span>
+        </a>
+        <button class="event-quick primary" id="advanceEventBtn">
+          <span id="advanceEventText">В следующий этап</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="event-finance" id="eventFinance">
+      <div><span>Клиенту</span><strong id="eventFinanceClient">—</strong></div>
+      <div><span>Расходы</span><strong id="eventFinanceCost">—</strong></div>
+      <div class="profit"><span>Прибыль</span><strong id="eventFinanceProfit">—</strong></div>
+    </div>
+
+    <button class="estimate-cta" id="openEstimate">
+      <span class="estimate-cta-icon" aria-hidden="true">
+        <svg class="icon-estimate" viewBox="0 0 24 24">
+          <rect x="5" y="3" width="14" height="18" rx="2"></rect>
+          <path d="M9 7h6"></path>
+          <path d="M9 11h6"></path>
+          <path d="M9 15h3"></path>
+        </svg>
+      </span>
+      <span class="estimate-cta-copy">
+        <strong>Смета мероприятия</strong>
+        <span class="estimate-cta-meta" id="estimateSmall">9 позиций · 546 BYN</span>
+      </span>
+      <svg class="estimate-cta-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+    </button>
+
+    <div class="event-secondary">
+      <button type="button" id="cancelEventBtn">Отменить мероприятие</button>
+    </div>
+  </div>
+</section>
+
+<!-- PAGE 4: ESTIMATE -->
+<section class="page" id="estimatePage">
+  <div class="page-inner">
+    <div class="page-title">
+      <button class="back" data-back="eventPage">
+        <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg>
+      </button>
+      <div style="flex:1">
+        <h2>Смета</h2>
+        <p id="estimateEventName">Свадьба Анны и Максима</p>
+      </div>
+    </div>
+
+    <div class="estimate-toolbar">
+      <button class="add-more" id="addMoreBtn">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+        Добавить позицию
+      </button>
+    </div>
+
+    <div class="booking-card" id="bookingCard">
+      <div class="booking-head">
+        <div><strong>Бронирование реквизита</strong></div>
+        <div class="booking-status" id="bookingStatus">Не забронировано</div>
+      </div>
+      <div class="booking-dates">
+        <label>С даты<input id="bookingStart" type="date"></label>
+        <label>По дату включительно<input id="bookingEnd" type="date"></label>
+      </div>
+      <div class="booking-summary" id="bookingSummary">Выберите период бронирования.</div>
+      <div class="booking-actions">
+        <button class="primary" id="toggleBooking">Забронировать реквизит</button>
+      </div>
+    </div>
+
+    <div class="estimate-list" id="estimateList"></div>
+
+    <div class="estimate-dock">
+      <div class="estimate-summary">
+        <div><span>Итого клиенту</span><strong id="sumClient">0 BYN</strong></div>
+        <div><span>Наши расходы</span><strong id="sumCost">0 BYN</strong></div>
+        <div class="profit" id="sumProfitRow"><span>Прибыль</span><strong id="sumProfit">0 BYN</strong></div>
+      </div>
+
+      <section class="payment-method-card" aria-labelledby="paymentMethodTitle">
+        <div class="payment-method-head">
+          <strong id="paymentMethodTitle">Способ оплаты</strong>
+          <span id="paymentMethodValue">Не выбран</span>
+        </div>
+        <div class="payment-method-options" id="paymentMethodOptions">
+          <button type="button" data-payment-method="cash">Наличные</button>
+          <button type="button" data-payment-method="card">Карта</button>
+          <button type="button" data-payment-method="barter">Бартер</button>
+        </div>
+      </section>
+
+      <div class="client-actions single">
+        <button class="primary" id="pdfEstimate">PDF для клиента</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- PAGE 4A: EDIT EVENT -->
+<section class="page" id="editEventPage">
+  <div class="page-inner">
+    <div class="page-title">
+      <button class="back" data-back="eventPage">
+        <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg>
+      </button>
+      <div style="flex:1">
+        <h2>Редактировать мероприятие</h2>
+        <p id="editEventSubtitle">Организационные данные</p>
+      </div>
+    </div>
+
+    <div class="form edit-event-form-v56">
+      <section class="edit-group-v56">
+        <div class="edit-group-head-v56">
+          <strong>Основное</strong>
+          <span>Название, дата и площадка</span>
+        </div>
+        <label class="edit-field-v56"><span>Название</span><input id="editEventTitle"></label>
+        <div class="edit-split-v56">
+          <label class="edit-field-v56"><span>Дата</span><input id="editEventDate" type="date"></label>
+          <label class="edit-field-v56"><span>Время</span><input id="editEventTime" type="time"></label>
+        </div>
+        <label class="edit-field-v56"><span>Место</span><input id="editEventPlace"></label>
+      </section>
+
+      <section class="edit-group-v56">
+        <div class="edit-group-head-v56">
+          <strong>Клиент</strong>
+          <span>Контакт и рабочая заметка</span>
+        </div>
+        <label class="edit-field-v56"><span>Контакт</span><input id="editEventContact"></label>
+        <label class="edit-field-v56 edit-field-area-v56"><span>Комментарий</span>
+          <textarea id="editEventComment" placeholder="Например: все цветовые решения подтверждать заранее"></textarea>
+        </label>
+      </section>
+
+      <section class="edit-group-v56">
+        <div class="edit-group-head-v56">
+          <strong>Организация</strong>
+          <span>Этап, приоритет и оформление</span>
+        </div>
+        <div class="edit-split-v56">
+          <label class="edit-field-v56"><span>Статус</span><select id="editEventStatus"></select></label>
+          <label class="edit-field-v56"><span>Приоритет</span>
+            <select id="editEventPriority">
+              <option value="normal">Обычный</option>
+              <option value="high">Важно</option>
+              <option value="urgent">Срочно</option>
+            </select>
+          </label>
+        </div>
+        <label class="edit-field-v56"><span>Тема карточки</span>
+          <select id="editEventTheme">
+            <option value="auto">Авто по названию</option>
+            <option value="wedding">Свадьба</option>
+            <option value="birthday">День рождения</option>
+            <option value="business">Корпоратив</option>
+            <option value="presentation">Презентация</option>
+            <option value="photo">Фотосъёмка</option>
+            <option value="dinner">Ужин</option>
+            <option value="event">Нейтральная</option>
+          </select>
+        </label>
+      </section>
+
+      <button class="save edit-save-v56" id="saveEventEdit">Сохранить изменения</button>
+    </div>
+  </div>
+</section>
+
+<!-- PAGE 5: REMINDERS -->
+<section class="page" id="remindersPage">
+  <div class="page-inner">
+    <div class="page-title">
+      <button class="back" data-back="eventPage">
+        <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg>
+      </button>
+      <div style="flex:1">
+        <h2>Напоминания</h2>
+        <p id="remindersEventName">Свадьба Анны и Максима</p>
+      </div>
+      <button class="add-more" id="addReminderBtn">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+        Добавить
+      </button>
+    </div>
+
+    <div class="reminder-list" id="reminderList"></div>
+  </div>
+</section>
+
+<!-- PAGE 6: RENTAL DETAIL -->
+<section class="page" id="rentalDetailPage">
+  <div class="page-inner">
+    <div class="page-title">
+      <button class="back" data-back="rentalPage">
+        <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg>
+      </button>
+      <div style="flex:1">
+        <h2>Позиция аренды</h2>
+        <p>Доступность и добавление в смету</p>
+      </div>
+    </div>
+
+    <div class="product-hero">
+      <div class="product-heading">
+        <span class="product-kicker" id="productCategory">Конструкции</span>
+        <h3 id="productTitle">Белая деревянная арка</h3>
+        <p id="productDescription">Конструкция для оформления церемоний и фотозон.</p>
+      </div>
+
+      <div class="product-info">
+        <div class="product-info-row"><strong>Цена аренды</strong><span id="productPrice">60 BYN / сутки</span></div>
+        <div class="product-info-row"><strong>Доступность</strong><span id="productAvailable">24 авг · свободно 1 из 1</span></div>
+      </div>
+
+      <div class="product-estimate-target">
+        <div class="product-estimate-target-copy">
+          <strong>Добавить в смету</strong>
+          <span id="productEstimateTargetHint">Выберите мероприятие</span>
+        </div>
+        <select id="productEstimateTarget" aria-label="Мероприятие для сметы"></select>
+      </div>
+
+      <button class="primary-wide" id="addProductToEstimate">Добавить в выбранную смету</button>
+    </div>
+  </div>
+</section>
+
+<nav class="bottom">
+  <button class="nav active" id="eventsNav">
+    <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+    <span>Мероприятия</span>
+  </button>
+
+  <button class="plus" id="newEventBtn" aria-label="Новое мероприятие"></button>
+
+  <button class="nav" id="rentalNav">
+    <svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6L5 8Z"></path><path d="M8 8a4 4 0 0 1 8 0"></path></svg>
+    <span>Аренда</span>
+  </button>
+</nav>
+
+<div class="overlay" id="newEventOverlay">
+  <section class="sheet new-event-sheet">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <strong>Новое мероприятие</strong>
+      <button class="close js-close-new"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
+    </div>
+    <div class="form">
+      <div class="new-event-alert" id="newEventAlert" role="status" aria-live="polite" hidden></div>
+      <label data-new-event-field="title">Название мероприятия<input id="newEventTitle" placeholder="Например, свадьба Анны и Максима"></label>
+      <div class="form-grid"><label>Дата<input id="newEventDate" type="date"></label><label>Время<input id="newEventTime" type="time"></label></div>
+      <label>Место<input id="newEventPlace" placeholder="Площадка или адрес"></label>
+      <label>Контакт клиента<input id="newEventContact" placeholder="Имя и телефон"></label>
+      <label>Комментарий<textarea id="newEventComment" placeholder="Организационные моменты по мероприятию"></textarea></label>
+      <div class="new-event-options">
+        <label>Приоритет
+          <select id="newEventPriority">
+            <option value="normal">Обычный</option>
+            <option value="high">Важно</option>
+            <option value="urgent">Срочно</option>
+          </select>
+        </label>
+        <label>Тема карточки
+          <select id="newEventTheme">
+            <option value="auto">Авто по названию</option>
+            <option value="wedding">Свадьба</option>
+            <option value="birthday">День рождения</option>
+            <option value="business">Корпоратив</option>
+            <option value="presentation">Презентация</option>
+            <option value="photo">Фотосъёмка</option>
+            <option value="dinner">Ужин</option>
+            <option value="event">Нейтральная</option>
+          </select>
+        </label>
+      </div>
+      <button class="save" id="createEvent">Создать в «Новый заказ»</button>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="reminderOverlay">
+  <section class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <strong>Новое напоминание</strong>
+      <button class="close js-close-reminder"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
+    </div>
+    <div class="form">
+      <label>О чём напомнить<textarea id="newReminderText" placeholder="Например: подтвердить монтаж с клиентом"></textarea></label>
+      <div>
+        <div class="helper" style="margin-bottom:6px">Быстрый интервал</div>
+        <div class="quick-times"><button>За 7 дней</button><button>За 3 дня</button><button>За 1 день</button><button>За 3 часа</button><button>За 1 час</button></div>
+      </div>
+      <div class="form-grid"><label>Дата<input id="newReminderDate" type="date"></label><label>Время<input id="newReminderTime" type="time"></label></div>
+      <button class="save" id="saveReminder">Сохранить напоминание</button>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="addItemOverlay">
+  <section class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <strong>Добавить в смету</strong>
+      <button class="close js-close-add"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
+    </div>
+    <div class="catalog-list" id="catalogList"></div>
+    <div class="estimate-special-list">
+      <button type="button" id="customItemBtn">
+        <span><strong>Свой товар</strong><small>Позиция, которой нет в каталоге</small></span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+      </button>
+      <button type="button" id="extraExpenseBtn">
+        <span><strong>Доп. расход</strong><small>Доставка, монтаж, подрядчик и другое</small></span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+      </button>
+    </div>
+  </section>
+</div>
+
+
+
+<div class="overlay" id="estimateEditOverlay">
+  <section class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <div class="estimate-editor-head"><strong id="estimateEditTitle">Позиция сметы</strong><div class="helper" id="estimateEditHelper"></div></div>
+      <button class="close" id="closeEstimateEdit"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
+    </div>
+    <div class="form">
+      <label>Наименование<input id="estimateEditName" placeholder="Наименование"></label>
+      <div class="form-grid">
+        <label>Количество<input id="estimateEditQty" type="number" min="1" step="1"></label>
+        <label>Цена за 1 шт., BYN<input id="estimateEditClient" type="number" min="0" step="1"></label>
+      </div>
+      <label>Расход за 1 шт., BYN<input id="estimateEditCost" type="number" min="0" step="1"></label>
+      <div class="estimate-edit-profit" id="estimateEditProfitRow"><span>Прибыль по позиции</span><strong id="estimateEditProfit">0 BYN</strong></div>
+      <label class="toggle-line"><input type="checkbox" id="estimateEditVisible" checked> Показывать позицию клиенту</label>
+      <button class="save" id="saveEstimateItem">Сохранить</button>
+      <button class="sheet-danger" id="deleteEstimateItem">Удалить из сметы</button>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="clientEstimateOverlay">
+  <section class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <div><strong>Смета для клиента</strong><div class="helper">Предпросмотр PDF</div></div>
+      <button class="close" id="closeClientEstimate"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
+    </div>
+    <div class="client-preview-list" id="clientEstimateRows"></div>
+    <div class="client-preview-total"><span>Итого</span><strong id="clientEstimateTotal">0 BYN</strong></div>
+    <div class="client-preview-payment" id="clientEstimatePayment" hidden><span>Способ оплаты</span><strong id="clientEstimatePaymentValue"></strong></div>
+    <p class="client-preview-note">В клиентском документе нет наших расходов и прибыли. Внутренние расходы также не выводятся.</p>
+    <div class="client-actions single"><button class="primary" id="finishClientPdf">Сформировать PDF</button></div>
+  </section>
+</div>
+
+<div class="overlay" id="searchOverlay">
+  <section class="sheet search-sheet-v43">
+    <div class="grab"></div>
+    <div class="search-head-v43">
+      <div><strong>Поиск по CRM</strong><span>Мероприятия, клиенты, площадки и аренда</span></div>
+      <button class="close" id="closeSearch" aria-label="Закрыть поиск"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
+    </div>
+    <div class="search-command-v43">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+      <input id="globalSearchInput" autocomplete="off" placeholder="Имя, мероприятие, площадка или декор">
+      <span class="search-shortcut-v43">⌘ K</span>
+    </div>
+    <div class="search-scopes-v43">
+      <button type="button" class="active" data-search-scope="all">Все</button>
+      <button type="button" data-search-scope="events">Мероприятия</button>
+      <button type="button" data-search-scope="rental">Аренда</button>
+    </div>
+    <div class="search-results" id="globalSearchResults"></div>
+  </section>
+</div>
+
+<div class="overlay" id="cancelEventOverlay">
+  <section class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <strong>Отменить мероприятие?</strong>
+      <button class="close" id="closeCancelEvent"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
+    </div>
+    <div class="mini-note">Мероприятие исчезнет из текущей воронки. Это отдельное действие, а не статус.</div>
+    <div class="client-actions" style="margin-top:10px">
+      <button id="keepEventBtn">Оставить</button>
+      <button class="primary" id="confirmCancelEvent">Отменить мероприятие</button>
+    </div>
+  </section>
+</div>
+
+<div class="stage-status-toast" id="stageStatusToast" role="status" aria-live="polite" aria-atomic="true">
+  <span class="stage-status-dot" id="stageStatusDot"></span>
+  <span class="stage-status-copy"><small>Статус изменён</small><strong id="stageStatusName"></strong></span>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+</section>
+</div>
+<script src="./js/config.js"></script>
+<script src="./js/auth/telegram-mini-app.js"></script>
+<script src="./js/data/demo-data.js"></script>
+<script src="./js/ui/app-shell.js"></script>
+<script src="./js/domain/bookings.js"></script>
+<script src="./js/domain/rental.js"></script>
+<script src="./js/domain/estimates.js"></script>
+<script src="./js/domain/reminders.js"></script>
+<script src="./js/domain/events.js"></script>
+<script src="./js/data/local-adapter.js"></script>
+<script src="./js/data/http-adapter.js"></script>
+<script src="./js/data/crm-data-layer.js"></script>
+<script src="./js/ui/app-state.js"></script>
+<script src="./js/ui/pipeline.js"></script>
+<script src="./js/ui/calendar.js"></script>
+<script src="./js/ui/event-detail.js"></script>
+<script src="./js/ui/rental.js"></script>
+<script src="./js/ui/search.js"></script>
+<script src="./js/ui/overlays.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>

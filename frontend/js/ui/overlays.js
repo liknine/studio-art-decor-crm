@@ -1,0 +1,550 @@
+function clearNewEventValidation(){
+  const alert=document.getElementById('newEventAlert');
+  if(alert){alert.hidden=true;alert.textContent='';}
+  document.querySelectorAll('#newEventOverlay [data-new-event-field]').forEach(label=>label.classList.remove('field-error'));
+}
+function showNewEventValidation(message,field='title'){
+  const alert=document.getElementById('newEventAlert');
+  if(alert){alert.textContent=message;alert.hidden=false;}
+  const label=document.querySelector(`#newEventOverlay [data-new-event-field="${field}"]`);
+  label?.classList.add('field-error');
+  const input=label?.querySelector('input,textarea,select');
+  window.setTimeout(()=>input?.focus(),40);
+}
+function createEventFromOverlay(){
+  clearNewEventValidation();
+  const title=document.getElementById('newEventTitle').value.trim();
+  if(!title){showNewEventValidation('Заполните название мероприятия.');return false;}
+
+  const dateValue=document.getElementById('newEventDate').value;
+  const event={
+    id:crmId('event'),
+    title,
+    subtitle:(document.getElementById('newEventPlace').value.trim()||''),
+    avatar:title.charAt(0).toUpperCase(),
+    date:dateValue ? eventLabelFromInput(dateValue) : 'Дата не указана',
+    time:document.getElementById('newEventTime').value||'—',
+    contact:document.getElementById('newEventContact').value.trim()||'Контакт не указан',
+    place:document.getElementById('newEventPlace').value.trim()||'Место не указано',
+    comment:document.getElementById('newEventComment').value.trim(),
+    priority:document.getElementById('newEventPriority').value||'normal',
+    visualTheme:document.getElementById('newEventTheme').value||'auto',
+    reminders:0,
+    reminderItems:[],
+    estimate:false,
+    estimateItems:[],
+    rentalBooking:{status:'draft',startDate:dateValue||'',endDate:dateValue||'',autoPeriod:true,reservedAt:''},
+    source:'manual',
+    received:'создано вручную'
+  };
+
+  createCRMEvent(stages,event,0);
+  persistCRM();
+  currentStage=0;
+  renderTrack();
+  renderDynamicCalendar();
+
+  ['newEventTitle','newEventDate','newEventTime','newEventContact','newEventPlace','newEventComment'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+
+  document.getElementById('newEventPriority').value='normal';
+  document.getElementById('newEventTheme').value='auto';
+  return true;
+}
+
+function openFunnelHome(resetStage=false){
+  if(resetStage)currentStage=0;
+
+  document.querySelectorAll('.tool').forEach(x=>x.classList.remove('active'));
+  const boardBtn=document.querySelector('.tool[data-view="board"]');
+  if(boardBtn)boardBtn.classList.add('active');
+
+  frame.style.display='block';
+  document.getElementById('stageSwitcher').style.display='block';
+  document.getElementById('swipeHint').style.display='none';
+  document.getElementById('calendar').classList.remove('active');
+
+  showPage('eventsPage');
+
+  window.requestAnimationFrame(()=>{
+    window.requestAnimationFrame(()=>syncStageViewport('auto'));
+  });
+}
+
+
+function openGlobalSearch(){
+  globalSearchScope='all';
+  document.querySelectorAll('[data-search-scope]').forEach(btn=>btn.classList.toggle('active',btn.dataset.searchScope==='all'));
+  renderGlobalSearch('');
+  document.getElementById('globalSearchInput').value='';
+  document.getElementById('searchOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('globalSearchInput').focus(),170);
+}
+document.getElementById('searchBtn').addEventListener('click',openGlobalSearch);
+document.querySelectorAll('[data-search-scope]').forEach(btn=>btn.addEventListener('click',()=>{
+  globalSearchScope=btn.dataset.searchScope||'all';
+  document.querySelectorAll('[data-search-scope]').forEach(x=>x.classList.toggle('active',x===btn));
+  renderGlobalSearch(document.getElementById('globalSearchInput').value);
+}));
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openGlobalSearch();}});
+
+document.getElementById('closeSearch').addEventListener('click',()=>document.getElementById('searchOverlay').classList.remove('open'));
+document.getElementById('globalSearchInput').addEventListener('input',e=>renderGlobalSearch(e.target.value));
+document.getElementById('globalSearchResults').addEventListener('click',e=>{
+  const eventRow=e.target.closest('[data-search-stage]');
+  const productRow=e.target.closest('[data-search-product]');
+
+  if(eventRow){
+    selectedStageIndex=Number(eventRow.dataset.searchStage);
+    selectedEventIndex=Number(eventRow.dataset.searchEvent);
+    currentStage=selectedStageIndex;
+    document.getElementById('searchOverlay').classList.remove('open');
+    populateEventPage();
+    showPage('eventPage');
+    return;
+  }
+
+  if(productRow){
+    selectedProductIndex=Number(productRow.dataset.searchProduct);
+    document.getElementById('searchOverlay').classList.remove('open');
+    populateProductPage();
+    showPage('rentalDetailPage');
+  }
+});
+
+document.getElementById('cancelEventBtn').addEventListener('click',()=>document.getElementById('cancelEventOverlay').classList.add('open'));
+document.getElementById('closeCancelEvent').addEventListener('click',()=>document.getElementById('cancelEventOverlay').classList.remove('open'));
+document.getElementById('keepEventBtn').addEventListener('click',()=>document.getElementById('cancelEventOverlay').classList.remove('open'));
+document.getElementById('confirmCancelEvent').addEventListener('click',()=>{
+  const event=selectedEvent();
+  if(!event || !deleteCRMEvent(stages,event.id))return;
+  persistCRM();
+  selectedEventIndex=0;
+  document.getElementById('cancelEventOverlay').classList.remove('open');
+  renderTrack();
+  renderDynamicCalendar();
+  openFunnelHome(false);
+  notify('Мероприятие отменено');
+});
+
+document.getElementById('brandHome').addEventListener('click',()=>openFunnelHome(true));
+document.getElementById('eventsNav').addEventListener('click',()=>openFunnelHome(false));
+document.getElementById('rentalNav').addEventListener('click',()=>{renderRental();showPage('rentalPage')});
+document.querySelectorAll('[data-back]').forEach(btn=>btn.addEventListener('click',()=>{
+  const target=btn.dataset.back;
+  if(target==='eventsPage'){openFunnelHome(false);return;}
+  showPage(target);
+}));
+document.querySelectorAll('.tool').forEach(btn=>btn.addEventListener('click',()=>{
+  if(btn.classList.contains('active'))return;
+  document.querySelectorAll('.tool').forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active');
+
+  const boardMode=btn.dataset.view==='board';
+  const calendar=document.getElementById('calendar');
+  const switcher=document.getElementById('stageSwitcher');
+  const hint=document.getElementById('swipeHint');
+  const outgoing=boardMode?calendar:frame;
+
+  outgoing.classList.add('v43-panel-out');
+  if(!boardMode){switcher.classList.add('v43-panel-out');hint.classList.add('v43-panel-out');}
+
+  window.setTimeout(()=>{
+    outgoing.classList.remove('v43-panel-out');
+    switcher.classList.remove('v43-panel-out');
+    hint.classList.remove('v43-panel-out');
+
+    frame.style.display=boardMode?'block':'none';
+    switcher.style.display=boardMode?'block':'none';
+    hint.style.display='none';
+    calendar.classList.toggle('active',!boardMode);
+
+    if(!boardMode)renderDynamicCalendar();
+    if(boardMode)syncStageViewport('auto');
+
+    const incoming=boardMode?frame:calendar;
+    incoming.classList.add('v43-panel-in');
+    if(boardMode){switcher.classList.add('v43-panel-in');hint.classList.add('v43-panel-in');}
+    window.setTimeout(()=>{
+      incoming.classList.remove('v43-panel-in');
+      switcher.classList.remove('v43-panel-in');
+      hint.classList.remove('v43-panel-in');
+    },220);
+  },120);
+}));
+
+document.getElementById('openEditEvent').addEventListener('click',openEditEventPage);
+
+document.getElementById('saveEventEdit').addEventListener('click',()=>{
+  const e=selectedEvent();
+  if(!e)return;
+
+  const nextStage=Number(document.getElementById('editEventStatus').value);
+  const previousDateKey=eventDateKey(e);
+  const editedDateKey=document.getElementById('editEventDate').value||previousDateKey;
+
+  e.title=document.getElementById('editEventTitle').value.trim()||e.title;
+  e.date=eventLabelFromInput(editedDateKey)||e.date;
+  e.time=document.getElementById('editEventTime').value||'—';
+  e.place=document.getElementById('editEventPlace').value.trim()||e.place;
+  e.contact=document.getElementById('editEventContact').value.trim()||e.contact;
+  e.comment=document.getElementById('editEventComment').value.trim();
+  e.priority=document.getElementById('editEventPriority').value||'normal';
+  e.visualTheme=document.getElementById('editEventTheme').value||'auto';
+
+  const booking=eventBooking(e);
+  if(booking.autoPeriod && editedDateKey && editedDateKey!==previousDateKey){
+    const oldStart=booking.startDate||previousDateKey;
+    const oldEnd=booking.endDate||oldStart;
+    const duration=Math.max(0,datesInRange(oldStart,oldEnd).length-1);
+    const startDate=new Date(editedDateKey+'T12:00:00');
+    const endDate=new Date(startDate);endDate.setDate(endDate.getDate()+duration);
+    booking.startDate=editedDateKey;
+    booking.endDate=`${endDate.getFullYear()}-${String(endDate.getMonth()+1).padStart(2,'0')}-${String(endDate.getDate()).padStart(2,'0')}`;
+    if(booking.status==='reserved'){
+      const conflict=bookingConflict(e);
+      if(conflict){
+        booking.status='draft';booking.reservedAt='';
+        notify('Дата изменена: бронь снята из-за конфликта склада');
+      }
+    }
+  }
+
+  if(Number.isFinite(nextStage) && nextStage!==selectedStageIndex){
+    const moved=moveCRMEvent(stages,e.id,nextStage,selectedStageIndex);
+    if(!moved)return;
+    selectedStageIndex=nextStage;
+    selectedEventIndex=0;
+    currentStage=nextStage;
+    renderTrack();
+  }
+
+  persistCRM();
+  populateEventPage();
+  renderDynamicCalendar();
+  renderRental();
+  showPage('eventPage');
+  crmHaptic('success');notify('Мероприятие обновлено');
+});
+
+document.getElementById('calendarPrev').addEventListener('click',()=>{
+  calendarCursor=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()-1,1);
+  renderDynamicCalendar();
+});
+
+document.getElementById('calendarNext').addEventListener('click',()=>{
+  calendarCursor=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()+1,1);
+  renderDynamicCalendar();
+});
+
+document.getElementById('calendarToday').addEventListener('click',()=>{
+  const now=new Date();
+  calendarCursor=new Date(now.getFullYear(),now.getMonth(),1);
+  calendarSelectedDate=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  renderDynamicCalendar();
+});
+
+document.getElementById('calendarMonthPicker').addEventListener('change',e=>{
+  if(!e.target.value)return;
+  const [y,m]=e.target.value.split('-').map(Number);
+  calendarCursor=new Date(y,m-1,1);
+  renderDynamicCalendar();
+});
+
+document.getElementById('dynamicCalendarGrid').addEventListener('click',e=>{
+  const day=e.target.closest('[data-calendar-date]');
+  if(!day)return;
+
+  calendarSelectedDate=day.dataset.calendarDate;
+  const d=new Date(calendarSelectedDate+'T12:00:00');
+
+  if(d.getMonth()!==calendarCursor.getMonth() || d.getFullYear()!==calendarCursor.getFullYear()){
+    calendarCursor=new Date(d.getFullYear(),d.getMonth(),1);
+  }
+
+  renderDynamicCalendar();
+});
+
+document.getElementById('calendarSelectedEvents').addEventListener('click',e=>{
+  const row=e.target.closest('[data-calendar-stage]');
+  if(!row)return;
+
+  selectedStageIndex=Number(row.dataset.calendarStage);
+  selectedEventIndex=Number(row.dataset.calendarEvent);
+  currentStage=selectedStageIndex;
+  populateEventPage();
+  showPage('eventPage');
+});
+
+
+document.getElementById('advanceEventBtn').addEventListener('click',()=>{
+  advanceEventToNextStage(selectedStageIndex,selectedEventIndex,true,selectedEvent()?.id||'');
+});
+
+document.getElementById('eventContactCall').addEventListener('click',e=>{
+  if(e.currentTarget.classList.contains('disabled')){
+    e.preventDefault();
+    notify('В контакте нет номера телефона');
+    return;
+  }
+  crmHaptic('soft');
+});
+
+document.getElementById('callClient').addEventListener('click',e=>{
+  if(e.currentTarget.classList.contains('disabled')){
+    e.preventDefault();
+    notify('В контакте нет номера телефона');
+    return;
+  }
+  crmHaptic('soft');
+});
+
+document.getElementById('openEstimate').addEventListener('click',()=>{renderEstimate();populateBookingPanel();showPage('estimatePage')});
+document.getElementById('openReminders').addEventListener('click',()=>{renderReminders();showPage('remindersPage')});
+document.getElementById('toggleBooking').addEventListener('click',()=>{
+  const event=selectedEvent();if(!event)return;
+  const booking=eventBooking(event);
+  if(booking.status==='reserved'){
+    releaseEventBooking(event);
+    persistCRM();renderEstimate();renderRental();populateBookingPanel();populateEventPage();notify('Бронь снята');
+    return;
+  }
+  const start=safeDateKey(document.getElementById('bookingStart').value)||booking.startDate||eventDateKey(event);
+  const end=safeDateKey(document.getElementById('bookingEnd').value)||booking.endDate||start;
+  if(!start||!end){notify('Укажите период бронирования');return;}
+  if(!bookingRentalItems(event).length){notify('В смете нет реквизита из каталога аренды');return;}
+  const result=reserveEventBooking(event,{start,end});
+  if(!result.ok){notify('Бронь невозможна: '+result.conflict.message);return;}
+  persistCRM();renderEstimate();renderRental();populateBookingPanel();populateEventPage();crmHaptic('success');notify('Реквизит забронирован');
+});
+['bookingStart','bookingEnd'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{
+  const event=selectedEvent();if(!event)return;
+  const booking=eventBooking(event);
+  if(booking.status==='reserved'){populateBookingPanel();notify('Сначала снимите активную бронь');return;}
+  const start=safeDateKey(document.getElementById('bookingStart').value);
+  let end=safeDateKey(document.getElementById('bookingEnd').value)||start;
+  if(start&&end&&compareDateKeys(start,end)>0){document.getElementById('bookingEnd').value=start;end=start;}
+  if(start){booking.startDate=start;booking.endDate=end;booking.autoPeriod=false;persistCRM();}
+  const conflict=bookingConflict(event,{start,end});
+  const summary=document.getElementById('bookingSummary');
+  if(conflict){summary.textContent='Конфликт: '+conflict.message;summary.className='booking-summary warn';}
+  else if(start){summary.textContent=`${formatShortDateKey(start)}${end&&end!==start?' — '+formatShortDateKey(end):''} · склад доступен для бронирования.`;summary.className='booking-summary ok';}
+}));
+document.getElementById('rentalDate').addEventListener('change',()=>{renderRental();if(document.getElementById('rentalDetailPage').classList.contains('active'))populateProductPage();});
+document.getElementById('rentalSearch').addEventListener('input',e=>{
+  rentalQuery=e.target.value||'';
+  renderRental();
+});
+
+document.getElementById('rentalFilters').addEventListener('click',e=>{
+  const button=e.target.closest('[data-rental-category]');
+  if(!button)return;
+  rentalCategory=button.dataset.rentalCategory;
+  renderRental();
+});
+
+document.getElementById('rentalList').addEventListener('click',e=>{
+  const card=e.target.closest('[data-product]');if(!card)return;
+  selectedProductIndex=Number(card.dataset.product);populateProductPage();showPage('rentalDetailPage');
+});
+document.getElementById('productEstimateTarget').addEventListener('change',e=>{
+  productEstimateTargetId=e.target.value||'';
+  populateProductEstimateTarget();
+});
+document.getElementById('addProductToEstimate').addEventListener('click',()=>{
+  const p=rentalProducts[selectedProductIndex];
+  const target=estimateTargetById(document.getElementById('productEstimateTarget').value);
+  if(!target){notify('Выберите мероприятие для сметы');return;}
+  if(!addRentalProductToSelectedEstimate(p,target.event))return;
+  if(selectedEvent()?.id===target.event.id)renderEstimate();
+  populateProductPage();
+  notify(`Добавлено в смету «${target.event.title}»`);
+});
+document.getElementById('addMoreBtn').addEventListener('click',()=>{renderCatalog();document.getElementById('addItemOverlay').classList.add('open')});
+document.getElementById('catalogList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-catalog-add]');if(!b)return;
+  const p=rentalProducts[Number(b.dataset.catalogAdd)];
+  if(!addRentalProductToSelectedEstimate(p))return;
+  renderEstimate();document.getElementById('addItemOverlay').classList.remove('open');notify('Добавлено в смету');
+});
+document.getElementById('customItemBtn').addEventListener('click',()=>openNewEstimateItem('custom'));
+document.getElementById('extraExpenseBtn').addEventListener('click',()=>openNewEstimateItem('expense'));
+document.querySelector('.js-close-add').addEventListener('click',()=>document.getElementById('addItemOverlay').classList.remove('open'));
+document.getElementById('addReminderBtn').addEventListener('click',()=>document.getElementById('reminderOverlay').classList.add('open'));
+document.querySelector('.js-close-reminder').addEventListener('click',()=>document.getElementById('reminderOverlay').classList.remove('open'));
+document.getElementById('saveReminder').addEventListener('click',()=>{
+  const e=selectedEvent();
+  if(!e)return;
+  const text=document.getElementById('newReminderText').value.trim()||'Напоминание';
+  const activeQuick=document.querySelector('.quick-times button.active');
+  createEventReminder(e,{
+    text,
+    kind:activeQuick?activeQuick.textContent.trim():'CRM-напоминание',
+    date:document.getElementById('newReminderDate').value||'',
+    time:document.getElementById('newReminderTime').value||''
+  });
+  e.reminders=e.reminderItems.length;
+  persistCRM();
+  document.getElementById('newReminderText').value='';
+  document.getElementById('newReminderDate').value='';
+  document.getElementById('newReminderTime').value='';
+  document.querySelectorAll('.quick-times button').forEach(x=>x.classList.remove('active'));
+  document.getElementById('reminderOverlay').classList.remove('open');
+  renderTrack();
+  renderReminders();
+  populateEventPage();
+  notify('Напоминание сохранено');
+});
+document.querySelectorAll('.quick-times button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.quick-times button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+}));
+function openNewEventSheet(){
+  const plus=document.getElementById('newEventBtn');
+  const overlay=document.getElementById('newEventOverlay');
+  retriggerMotion(plus,'plus-pulse',460);
+  clearNewEventValidation();
+  overlay.classList.remove('open');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>overlay.classList.add('open')));
+}
+function closeNewEventSheet(){document.getElementById('newEventOverlay').classList.remove('open');}
+document.getElementById('newEventBtn').addEventListener('click',openNewEventSheet);
+document.querySelector('.js-close-new').addEventListener('click',closeNewEventSheet);
+document.getElementById('newEventTitle').addEventListener('input',clearNewEventValidation);
+document.getElementById('createEvent').addEventListener('click',()=>{
+  if(!createEventFromOverlay())return;
+  closeNewEventSheet();
+  openFunnelHome(true);
+  crmHaptic('success');notify('Мероприятие создано в «Новый заказ»');
+});
+let editingEstimateIndex=-1;
+let estimateEditorMode='edit';
+let estimateDraftKind='custom';
+
+function openNewEstimateItem(kind){
+  estimateEditorMode='create';
+  estimateDraftKind=kind==='expense'?'expense':'custom';
+  editingEstimateIndex=-1;
+  const expense=estimateDraftKind==='expense';
+  document.getElementById('estimateEditTitle').textContent=expense?'Доп. расход':'Свой товар';
+  document.getElementById('estimateEditHelper').textContent=expense?'Доставка, монтаж, печать, подрядчик или другой расход.':'Позиция, которой нет в каталоге аренды.';
+  document.getElementById('estimateEditName').value='';
+  document.getElementById('estimateEditQty').value=1;
+  document.getElementById('estimateEditClient').value=expense?0:'';
+  document.getElementById('estimateEditCost').value='';
+  document.getElementById('estimateEditVisible').checked=!expense;
+  document.getElementById('saveEstimateItem').textContent='Добавить в смету';
+  document.getElementById('deleteEstimateItem').hidden=true;
+  syncEstimateEditProfit();
+  document.getElementById('addItemOverlay').classList.remove('open');
+  document.getElementById('estimateEditOverlay').classList.add('open');
+  requestAnimationFrame(()=>document.getElementById('estimateEditName').focus());
+}
+
+function syncEstimateEditProfit(){
+  const qty=Math.max(1,Math.round(Number(document.getElementById('estimateEditQty').value)||1));
+  const client=Number(document.getElementById('estimateEditClient').value)||0;
+  const cost=Number(document.getElementById('estimateEditCost').value)||0;
+  const profit=(client-cost)*qty;
+  document.getElementById('estimateEditProfit').textContent=money(profit);
+  document.getElementById('estimateEditProfitRow').classList.toggle('negative',profit<0);
+}
+document.getElementById('estimateList').addEventListener('click',e=>{
+  const row=e.target.closest('[data-estimate-index]');if(!row)return;
+  editingEstimateIndex=Number(row.dataset.estimateIndex);
+  estimateEditorMode='edit';
+  syncSelectedEstimate();
+  const x=estimate[editingEstimateIndex];if(!x)return;
+  document.getElementById('estimateEditTitle').textContent='Позиция сметы';
+  document.getElementById('estimateEditHelper').textContent=x.sub||'';
+  document.getElementById('saveEstimateItem').textContent='Сохранить';
+  document.getElementById('deleteEstimateItem').hidden=false;
+  document.getElementById('estimateEditName').value=x.name;
+  document.getElementById('estimateEditQty').value=x.qty;
+  document.getElementById('estimateEditClient').value=x.unitClient;
+  document.getElementById('estimateEditCost').value=x.unitCost;
+  document.getElementById('estimateEditVisible').checked=x.clientVisible!==false;
+  syncEstimateEditProfit();
+  document.getElementById('estimateEditOverlay').classList.add('open');
+});
+['estimateEditQty','estimateEditClient','estimateEditCost'].forEach(id=>document.getElementById(id).addEventListener('input',syncEstimateEditProfit));
+document.getElementById('closeEstimateEdit').addEventListener('click',()=>document.getElementById('estimateEditOverlay').classList.remove('open'));
+document.getElementById('saveEstimateItem').addEventListener('click',()=>{
+  syncSelectedEstimate();
+  const name=document.getElementById('estimateEditName').value.trim();
+  const qty=Math.max(1,Math.round(Number(document.getElementById('estimateEditQty').value)||1));
+  const unitClient=Math.max(0,Number(document.getElementById('estimateEditClient').value)||0);
+  const unitCost=Math.max(0,Number(document.getElementById('estimateEditCost').value)||0);
+  const clientVisible=document.getElementById('estimateEditVisible').checked;
+  if(!name){notify('Введите наименование');return;}
+
+  if(estimateEditorMode==='create'){
+    const sub=estimateDraftKind==='expense'?'Доп. расход':'Свой товар';
+    const event=selectedEvent();
+    createEventEstimateItem(event,{name,sub,qty,unitClient,unitCost,clientVisible});
+    persistCRM();
+    document.getElementById('estimateEditOverlay').classList.remove('open');
+    renderEstimate();renderRental();
+    notify(estimateDraftKind==='expense'?'Расход добавлен':'Свой товар добавлен');
+    return;
+  }
+
+  const x=estimate[editingEstimateIndex];if(!x)return;
+  if(x.productId){
+    const p=rentalProducts.find(product=>product.id===x.productId);
+    const event=selectedEvent();
+    if(p&&event){
+      const availability=maxReservableForEvent(p,event);
+      if(qty>availability.max){notify(`Доступно только ${availability.max} шт. на ${formatShortDateKey(availability.dateKey)}`);return;}
+    }
+  }
+  const event=selectedEvent();
+  updateEventEstimateItem(event,x.id,{name,qty,unitClient,unitCost,clientVisible});
+  if(event)estimate=eventEstimate(event);
+  persistCRM();
+  document.getElementById('estimateEditOverlay').classList.remove('open');
+  renderEstimate();renderRental();notify('Позиция обновлена');
+});
+document.getElementById('deleteEstimateItem').addEventListener('click',()=>{
+  syncSelectedEstimate();
+  if(estimateEditorMode!=='edit'||editingEstimateIndex<0||!estimate[editingEstimateIndex])return;
+  const event=selectedEvent();
+  deleteEventEstimateItem(event,estimate[editingEstimateIndex].id);editingEstimateIndex=-1;
+  if(event)estimate=eventEstimate(event);
+  persistCRM();
+  document.getElementById('estimateEditOverlay').classList.remove('open');
+  renderEstimate();renderRental();notify('Позиция удалена из сметы');
+});
+document.getElementById('paymentMethodOptions').addEventListener('click',e=>{
+  const button=e.target.closest('[data-payment-method]');
+  if(!button)return;
+  const event=selectedEvent();
+  if(!event)return;
+  const value=button.dataset.paymentMethod;
+  if(!PAYMENT_METHODS[value])return;
+  setEventPaymentMethod(event,event.paymentMethod===value?'':value);
+  persistCRM();
+  renderPaymentMethod();
+  crmHaptic('soft');
+});
+document.getElementById('pdfEstimate').addEventListener('click',()=>{
+  renderClientEstimatePreview();
+  document.getElementById('clientEstimateOverlay').classList.add('open');
+});
+document.getElementById('closeClientEstimate').addEventListener('click',()=>document.getElementById('clientEstimateOverlay').classList.remove('open'));
+document.getElementById('finishClientPdf').addEventListener('click',()=>{
+  document.getElementById('clientEstimateOverlay').classList.remove('open');
+  notify('PDF для клиента сформирован');
+});
+
+document.querySelectorAll('.overlay').forEach(overlay=>{
+  overlay.addEventListener('click',e=>{
+    if(e.target===overlay)overlay.classList.remove('open');
+  });
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  const open=[...document.querySelectorAll('.overlay.open')].pop();
+  if(open){open.classList.remove('open');return;}
+});

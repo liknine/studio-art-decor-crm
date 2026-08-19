@@ -1,0 +1,3575 @@
+:root{
+  --canvas:#fff;
+  --ink:#1f2023;
+  --muted:#747981;
+  --placeholder:#969aa1;
+  --border:#e3e5e8;
+  --soft:#f3f4f5;
+  --blue:#397ee8;
+  --stage-gray:#b8bbc0;
+  --stage-blue:#4385dd;
+  --stage-violet:#7765d8;
+  --stage-orange:#ef9847;
+  --stage-green:#28a66f;
+  --stage-teal:#4aa5b5;
+  --stage-closed:#76a071;
+  --shadow:0 2px 3px -2px rgba(20,25,35,.11),0 4px 8px -4px rgba(20,25,35,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#eef0f3;color:var(--ink)}
+body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round}
+.wrap{display:flex;justify-content:center;padding:14px}
+.app{
+  position:relative;width:min(100%,430px);min-height:880px;overflow:hidden;
+  background:var(--canvas);border:1px solid #d9dce1;border-radius:22px;
+  box-shadow:0 12px 30px rgba(0,0,0,.04)
+}
+
+/* global */
+.topbar{
+  height:64px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;border-bottom:1px solid var(--border);background:#fff
+}
+.workspace{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{
+  width:30px;height:30px;display:grid;place-items:center;border-radius:7px;
+  background:#24262a;color:#fff;font-size:13px;font-weight:600
+}
+.workspace-copy{display:flex;align-items:center;gap:8px;min-width:0}
+.workspace-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:500;letter-spacing:-.01em}
+.workspace-pill{
+  height:28px;padding:0 9px;display:inline-flex;align-items:center;gap:5px;
+  border-radius:7px;background:#f0f1f2;color:#6f7278;font-size:13px;font-weight:500
+}
+.workspace-pill svg{width:15px;height:15px}
+.top-actions{display:flex;gap:3px}
+.top-action{
+  width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:10px;
+  background:transparent;color:#5f6369
+}
+.top-action:hover{background:#f4f5f6}
+.page{display:none;min-height:738px;padding-bottom:92px;background:#fff}
+.page.active{display:block}
+.page-inner{padding:14px 16px 0}
+.page-title{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px
+}
+.page-title h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em}
+.page-title p{margin:3px 0 0;color:var(--placeholder);font-size:11px;font-weight:500}
+.back{
+  width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--border);
+  border-radius:10px;background:#fff;color:#646970;box-shadow:0 1px 2px rgba(20,25,35,.04)
+}
+.toolbar{display:flex;gap:8px;padding:14px 16px 10px}
+.tool{
+  height:40px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border:1px solid var(--border);border-radius:10px;background:#fff;
+  font-size:14px;font-weight:500;letter-spacing:-.02em;box-shadow:0 1px 2px rgba(20,25,35,.04)
+}
+.tool.active{background:#24262a;border-color:#24262a;color:#fff}
+.swipe-hint{padding:0 16px 8px;color:#a0a3a8;font-size:11px;font-weight:500}
+
+/* pipeline */
+.stage-frame{
+  position:relative;overflow:hidden;min-height:610px;padding:0 16px 96px;
+  touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none
+}
+.stage-frame.dragging{cursor:grabbing}
+.stage-track{position:relative;width:100%;min-height:610px;overflow:hidden;contain:layout paint style}
+.stage-page{
+  position:absolute;inset:0;width:100%;max-height:650px;overflow-y:auto;
+  overscroll-behavior-y:contain;will-change:transform;backface-visibility:hidden;
+  transform:translate3d(0,0,0);scrollbar-width:none
+}
+.stage-page::-webkit-scrollbar{display:none}
+.stage-list{display:grid;gap:10px;padding-bottom:12px}
+.stage-head{
+  height:47px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);margin-bottom:16px
+}
+.stage-title{display:flex;align-items:center;gap:9px;min-width:0}
+.stage-dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto}
+.stage-title strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.count{
+  min-width:26px;height:26px;padding:0 7px;display:grid;place-items:center;
+  border-radius:7px;background:#eeeff1;color:#6f7278;font-size:13px;font-weight:500
+}
+.stage-index{font-size:12px;color:#9a9da3;font-weight:500}
+.card{overflow:hidden;border:1px solid var(--border);border-radius:12px;background:#fff;box-shadow:var(--shadow)}
+.card.clickable{cursor:pointer}
+.card-head{
+  min-height:58px;padding:11px 14px;display:grid;
+  grid-template-columns:34px minmax(0,1fr) 36px;gap:10px;align-items:center;
+  border-bottom:1px solid var(--border)
+}
+.avatar{
+  width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--border);
+  border-radius:7px;background:#fff;color:#50545a;font-size:13px;font-weight:600
+}
+.card-name{min-width:0}
+.card-name strong{
+  display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  padding-bottom:3px;border-bottom:1px solid var(--border);font-size:16px;line-height:1.25;
+  font-weight:500;letter-spacing:-.01em
+}
+.card-name span{display:block;margin-top:3px;color:#9a9da2;font-size:11px;font-weight:500}
+.bell{
+  position:relative;width:36px;height:36px;padding:0;display:grid;place-items:center;
+  border:0;border-radius:10px;background:transparent;color:#656970
+}
+.bell:hover{background:#f4f5f6}
+.bell.has::after{
+  content:"";position:absolute;right:6px;top:6px;width:7px;height:7px;
+  border:2px solid #fff;border-radius:50%;background:#266df0
+}
+.bell svg{width:18px;height:18px}
+.card-body{padding:13px 14px 12px}
+.row{
+  min-height:40px;display:flex;align-items:center;gap:11px;color:#303238;
+  font-size:15px;line-height:1.45;font-weight:500;letter-spacing:-.02em
+}
+.row svg{width:18px;height:18px;color:#62666d;flex:0 0 auto}
+.row .right{margin-left:auto;color:#62666d;font-size:14px}
+.contact-pill{
+  display:inline-flex;align-items:center;gap:7px;height:30px;min-width:0;padding:0 9px 0 5px;
+  border-radius:9px;background:#f3f4f5;color:#73777e;font-size:14px;font-weight:500
+}
+.contact-avatar{
+  width:22px;height:22px;display:grid;place-items:center;border-radius:50%;
+  background:#eaaa00;color:#fff;font-size:10px;font-weight:600
+}
+.comment{align-items:flex-start;min-height:unset;padding-top:8px;color:#73777e;font-size:13px;line-height:1.45}
+.comment svg{margin-top:1px}
+.comment-text{display:-webkit-box;overflow:hidden;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.card-footer{
+  min-height:45px;display:flex;align-items:center;gap:14px;margin-top:8px;padding-top:10px;
+  border-top:1px solid var(--border);color:#8b8f95;font-size:13px;font-weight:500
+}
+.footer-item{display:inline-flex;align-items:center;gap:5px}
+.footer-item svg{width:16px;height:16px;color:#8b8f95}
+.footer-money{color:#62666d}
+.advance{
+  margin-left:auto;height:32px;padding:0 9px;display:inline-flex;align-items:center;gap:6px;
+  border:1px solid var(--border);border-radius:8px;background:#fff;color:#5b6067;
+  font-size:12px;font-weight:500
+}
+.advance:hover{background:#f4f5f6}
+.empty{
+  padding:20px 14px;border:1px dashed var(--border);border-radius:12px;background:#fff;
+  color:#9b9ea4;text-align:center;font-size:13px;font-weight:500
+}
+
+/* calendar */
+.calendar{display:none;padding:10px 16px 96px}
+.calendar.active{display:block}
+.calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calendar-head strong{font-size:16px;font-weight:600}
+.calendar-modes{display:flex;gap:6px}
+.calendar-modes button{
+  height:34px;padding:0 10px;border:1px solid transparent;border-radius:10px;
+  background:transparent;color:#747981;font-size:13px;font-weight:500
+}
+.calendar-modes button.active{border-color:var(--border);background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(20,25,35,.04)}
+.calendar-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);overflow:hidden;border:1px solid var(--border);
+  border-radius:12px;background:#fff;box-shadow:var(--shadow)
+}
+.weekday,.day{
+  height:45px;display:grid;place-items:center;border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);font-size:13px;font-weight:500
+}
+.weekday{height:32px;background:#fafafa;color:#9a9da2;font-size:11px}
+.day{position:relative;border-top:0;border-left:0;background:#fff}
+.day.muted{color:#b8bbc0}
+.day.selected{background:#24262a;color:#fff}
+.day i{position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:#266df0}
+.day.selected i{background:#fff}
+.calendar-event{
+  display:grid;grid-template-columns:3px minmax(0,1fr) 16px;gap:10px;align-items:center;
+  width:100%;margin-top:10px;padding:10px 12px;border:1px solid var(--border);
+  border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(20,25,35,.04);text-align:left
+}
+.calendar-event .bar{width:3px;height:31px;border-radius:3px;background:#4385dd}
+.calendar-event .copy{display:grid;gap:2px}
+.calendar-event strong{font-size:14px;font-weight:500}
+.calendar-event span{font-size:12px;color:#747981}
+.calendar-event svg{width:15px;color:#8b8f95}
+
+/* generic lists */
+.list{display:grid;gap:9px}
+.list-card{
+  width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;
+  padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff;
+  box-shadow:0 1px 2px rgba(20,25,35,.04);text-align:left
+}
+.list-main{min-width:0}
+.list-main strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500}
+.list-main span{display:block;margin-top:4px;color:var(--muted);font-size:11px;font-weight:500;line-height:1.4}
+.list-side{text-align:right}
+.list-side strong{display:block;font-size:13px;font-weight:500}
+.list-side span{display:block;margin-top:4px;color:var(--placeholder);font-size:10px;font-weight:500}
+.chev{width:16px;height:16px;color:#8c9096}
+
+/* event detail */
+.event-hero{
+  padding:14px;border:1px solid var(--border);border-radius:12px;background:#fff;box-shadow:var(--shadow)
+}
+.event-hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.event-hero h3{margin:0;font-size:17px;font-weight:600;letter-spacing:-.02em}
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;border-radius:9px;
+  background:#f3f4f5;color:#555a61;font-size:12px;font-weight:500
+}
+.event-fields{display:grid;margin-top:12px;border-top:1px solid var(--border)}
+.field{
+  min-height:45px;display:grid;grid-template-columns:108px minmax(0,1fr);gap:10px;
+  align-items:center;border-bottom:1px solid var(--border)
+}
+.field:last-child{border-bottom:0}
+.field span{color:var(--muted);font-size:12px;font-weight:500}
+.field strong{font-size:14px;font-weight:500}
+.action-list{display:grid;gap:8px;margin-top:12px}
+.action-row{
+  width:100%;min-height:45px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;
+  border:1px solid var(--border);border-radius:10px;background:#fff;font-size:13px;font-weight:500
+}
+.action-row small{color:var(--muted);font-size:11px;font-weight:500}
+.danger{color:#b84e49;border-color:#f0d2d0;background:#fff8f8}
+
+/* estimate / event economics */
+.estimate-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.estimate-toolbar strong{font-size:14px;font-weight:600}
+.finance-note{margin:0 0 10px;color:#8b9096;font-size:10px;line-height:1.45}
+.add-more{
+  height:34px;padding:0 10px;display:inline-flex;align-items:center;gap:6px;
+  border:1px solid var(--border);border-radius:9px;background:#fff;color:#3f4349;
+  font-size:12px;font-weight:500;box-shadow:0 1px 2px rgba(20,25,35,.04)
+}
+.estimate-list{display:grid;gap:8px}
+.estimate-item{
+  padding:11px;border:1px solid var(--border);border-radius:12px;background:#fff;
+  box-shadow:0 1px 2px rgba(20,25,35,.04);cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease
+}
+.estimate-item:hover{border-color:#d3d6da;box-shadow:0 3px 10px rgba(20,25,35,.055)}
+.estimate-item:active{transform:scale(.995)}
+.estimate-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.item-main{min-width:0;flex:1}
+.item-main strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600}
+.item-main span{display:block;margin-top:2px;color:#92969c;font-size:10px;font-weight:500}
+.qty-chip{flex:0 0 auto;padding:4px 7px;border:1px solid var(--border);border-radius:8px;background:#fafafa;color:#62676d;font-size:10px;font-weight:600}
+.internal-badge{display:inline-flex;margin-top:5px;padding:3px 6px;border-radius:6px;background:#f3f4f5;color:#777c82;font-size:9px;font-weight:600}
+.finance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.finance-cell{min-width:0;padding:7px 8px;border-radius:9px;background:#f7f7f8}
+.finance-cell span{display:block;color:#92969c;font-size:8px;font-weight:600;letter-spacing:.02em;text-transform:uppercase}
+.finance-cell strong{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600}
+.finance-cell.profit strong{color:#24865d}
+.finance-cell.profit.negative strong{color:#b84e49}
+.estimate-summary{
+  margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff;box-shadow:var(--shadow)
+}
+.estimate-summary div{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.estimate-summary span{color:#747981}.estimate-summary strong{font-weight:600}
+.estimate-summary .profit{margin-top:5px;padding-top:9px;border-top:1px solid var(--border)}
+.estimate-summary .profit strong{color:#24865d}
+.estimate-summary .profit.negative strong{color:#b84e49}
+.client-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.client-actions.single{grid-template-columns:1fr}
+.client-actions button{height:38px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:12px;font-weight:500}
+.client-actions button.primary{background:#24262a;border-color:#24262a;color:#fff}
+.estimate-edit-profit{display:flex;align-items:center;justify-content:space-between;padding:10px 11px;border:1px solid var(--border);border-radius:10px;background:#f8f8f9;font-size:12px}
+.estimate-edit-profit span{color:#777c82}.estimate-edit-profit strong{color:#24865d}.estimate-edit-profit.negative strong{color:#b84e49}
+
+.booking-card{
+  margin:0 0 12px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff;box-shadow:var(--shadow)
+}
+.booking-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.booking-head strong{display:block;font-size:14px;font-weight:600}
+.booking-head span{display:block;margin-top:3px;color:#8b9096;font-size:10px;line-height:1.4}
+.booking-status{
+  flex:0 0 auto;height:26px;padding:0 8px;display:inline-flex;align-items:center;gap:6px;border-radius:8px;
+  background:#f1f2f3;color:#6e737a;font-size:10px;font-weight:600
+}
+.booking-status::before{content:"";width:7px;height:7px;border-radius:50%;background:#a4a8ae}
+.booking-status.reserved{background:#eef8f3;color:#238158}
+.booking-status.reserved::before{background:#28a66f}
+.booking-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.booking-dates label{display:grid;gap:5px;color:#777c82;font-size:10px;font-weight:600}
+.booking-dates input{height:38px;width:100%;border:1px solid var(--border);border-radius:9px;background:#fff;padding:0 9px;font-size:12px;font-weight:500;outline:none}
+.booking-summary{margin-top:9px;padding:9px 10px;border-radius:9px;background:#f7f7f8;color:#6e737a;font-size:10px;line-height:1.45}
+.booking-summary.ok{background:#f1f8f4;color:#287657}
+.booking-summary.warn{background:#fff5ee;color:#9d5d2c}
+.booking-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.booking-actions button{height:36px;border:1px solid var(--border);border-radius:9px;background:#fff;font-size:11px;font-weight:600}
+.booking-actions button.primary{background:#24262a;border-color:#24262a;color:#fff}
+.booking-actions button.release{border-color:#d8e9df;background:#f4faf6;color:#287657}
+.booking-linked{display:inline-flex;align-items:center;gap:5px;margin-top:5px;color:#6c737a;font-size:9px;font-weight:600}
+.booking-linked::before{content:"";width:6px;height:6px;border-radius:50%;background:#28a66f}
+.booking-linked.warn{color:#a56636}
+.booking-linked.warn::before{background:#ef9847}
+.booking-line-meta{display:block;margin-top:3px;color:#969aa1;font-size:9px;font-weight:500}
+.toggle-line{display:flex;align-items:center;gap:9px;padding:8px 0;color:#5f646a;font-size:11px}
+.toggle-line input{width:17px;height:17px;accent-color:#25272b}
+.sheet-danger{height:40px;border:1px solid #edd1cf;border-radius:10px;background:#fff7f7;color:#b84e49;font-size:12px;font-weight:600}
+.client-preview-list{display:grid;gap:0;border:1px solid var(--border);border-radius:11px;overflow:hidden;background:#fff}
+.client-preview-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:10px 11px;border-bottom:1px solid var(--border);font-size:12px}
+.client-preview-row:last-child{border-bottom:0}
+.client-preview-row div{min-width:0}
+.client-preview-row strong{display:block;font-weight:600}.client-preview-row small{display:block;margin-top:2px;color:#8b9096;font-size:9px}
+.client-preview-row>span{font-weight:600;white-space:nowrap}
+.client-preview-total{display:flex;justify-content:space-between;margin-top:10px;padding:11px 12px;border-radius:11px;background:#25272b;color:#fff;font-size:13px}
+.client-preview-note{margin:8px 1px 0;color:#8b9096;font-size:9px;line-height:1.45}
+
+/* reminders */
+.reminder-list{display:grid;gap:8px}
+.reminder-card{
+  display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:10px;align-items:center;
+  padding:11px;border:1px solid var(--border);border-radius:11px;background:#fff;box-shadow:0 1px 2px rgba(20,25,35,.04)
+}
+.reminder-icon{
+  width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:#f3f4f5;color:#62666d
+}
+.reminder-copy strong{display:block;font-size:13px;font-weight:500}
+.reminder-copy span{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:500}
+.reminder-time{font-size:11px;color:#6e737a;font-weight:500;white-space:nowrap}
+
+/* rental */
+.date-selector{
+  display:flex;align-items:center;gap:8px;margin-bottom:12px
+}
+.date-selector input{
+  height:38px;flex:1;border:1px solid var(--border);border-radius:10px;background:#fff;
+  padding:0 10px;font-size:13px;font-weight:500;outline:none
+}
+.availability{
+  display:inline-flex;align-items:center;gap:5px;margin-top:5px;color:#5f646b;font-size:11px;font-weight:500
+}
+.av-dot{width:7px;height:7px;border-radius:50%;background:#27a66f}
+.stock-row{display:flex;gap:7px;margin-top:7px;flex-wrap:wrap}
+.stock-chip{
+  height:25px;padding:0 8px;display:inline-flex;align-items:center;border-radius:7px;
+  background:#f3f4f5;color:#6a6f76;font-size:10px;font-weight:500
+}
+.product-hero{
+  padding:14px;border:1px solid var(--border);border-radius:12px;background:#fff;box-shadow:var(--shadow)
+}
+.product-visual{
+  height:138px;display:grid;place-items:center;border-radius:10px;background:#f5f5f6;color:#9a9ea4;margin-bottom:12px
+}
+.product-visual svg{width:44px;height:44px;stroke-width:1.2}
+.product-hero h3{margin:0;font-size:17px;font-weight:600}
+.product-hero p{margin:6px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.product-info{display:grid;margin-top:12px;border-top:1px solid var(--border)}
+.primary-wide{
+  width:100%;height:42px;margin-top:12px;border:0;border-radius:10px;background:#24262a;
+  color:#fff;font-size:13px;font-weight:500
+}
+
+/* bottom */
+.bottom{
+  position:absolute;left:0;right:0;bottom:0;height:78px;padding:6px 30px 12px;
+  display:grid;grid-template-columns:1fr 64px 1fr;align-items:center;
+  border-top:1px solid var(--border);background:rgba(255,255,255,.98);z-index:20
+}
+.nav{display:grid;justify-items:center;gap:3px;border:0;background:transparent;color:#8b8f95;font-size:11px;font-weight:500}
+.nav.active{color:var(--ink)}
+.nav svg{width:18px;height:18px}
+.plus{
+  position:relative;width:44px;height:44px;justify-self:center;border:0;border-radius:10px;
+  background:#24262a;box-shadow:0 2px 5px rgba(28,40,64,.10)
+}
+.plus::before,.plus::after{
+  content:"";position:absolute;left:50%;top:50%;border-radius:2px;background:#fff;
+  transform:translate(-50%,-50%)
+}
+.plus::before{width:17px;height:1.6px}.plus::after{width:1.6px;height:17px}
+
+/* overlays */
+.overlay{
+  position:absolute;inset:0;z-index:40;display:none;align-items:flex-end;background:rgba(16,17,19,.16)
+}
+.overlay.open{display:flex}
+.sheet{
+  width:100%;max-height:86%;overflow-y:auto;padding:8px 16px 20px;
+  border-top:1px solid var(--border);border-radius:14px 14px 0 0;background:#fff;
+  box-shadow:0 -10px 30px rgba(28,40,64,.08)
+}
+.grab{width:34px;height:4px;margin:0 auto 11px;border-radius:4px;background:#d8dade}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;min-height:42px;margin-bottom:10px}
+.sheet-head strong{font-size:16px;font-weight:600}
+.close{
+  width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--border);
+  border-radius:10px;background:#fff;color:#6f7379
+}
+.form{display:grid;gap:10px}
+.form label{display:grid;gap:5px;color:#6f7379;font-size:12px;font-weight:500}
+.form input,.form textarea,.form select{
+  width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:10px;
+  background:#fff;font-size:16px;font-weight:500;outline:none
+}
+.form textarea{min-height:82px;resize:vertical}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.quick-times{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.quick-times::-webkit-scrollbar{display:none}
+.quick-times button{
+  flex:0 0 auto;height:34px;padding:0 10px;border:1px solid var(--border);
+  border-radius:10px;background:#fff;color:#62666d;font-size:12px;font-weight:500
+}
+.quick-times button.active{border-color:#bad0fa;background:#f4f8ff;color:#266df0}
+.helper{color:#8b8f95;font-size:11px;line-height:1.4;font-weight:500}
+.save{width:100%;height:40px;border:0;border-radius:10px;background:#24262a;color:#fff;font-size:14px;font-weight:500}
+.catalog-list{display:grid;gap:8px}
+.catalog-row{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;
+  padding:10px 11px;border:1px solid var(--border);border-radius:10px;background:#fff
+}
+.catalog-row div{display:grid;gap:2px;min-width:0}
+.catalog-row strong{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.catalog-row span{font-size:11px;color:#8b8f95}
+.catalog-row button{height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:12px;font-weight:500}
+.toast{
+  position:absolute;left:50%;bottom:90px;z-index:60;max-width:calc(100% - 28px);
+  padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;
+  box-shadow:0 6px 18px rgba(28,40,64,.10);font-size:12px;font-weight:500;
+  opacity:0;pointer-events:none;transform:translate(-50%,8px);transition:.18s ease
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* =========================================================
+   v24 MOBILE SHELL
+   iPhone file preview fallback:
+   native ChatGPT preview chrome is ~120 CSS px in the supplied screenshots.
+   Telegram Mini App overrides this height at runtime with viewportStableHeight.
+   ========================================================= */
+.site-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.site-logo-mark{width:46px;height:46px;flex:0 0 auto;fill:none;stroke:#151515;stroke-width:1.15}
+.site-logo-mark text{fill:#151515;stroke:none;font-family:Georgia,"Times New Roman",serif;font-size:18px;font-weight:400}
+.site-logo-copy{display:grid;gap:2px;min-width:0}
+.site-logo-name{font-family:Georgia,"Times New Roman",serif;font-size:13px;line-height:1;letter-spacing:.105em;white-space:nowrap}
+.site-logo-sub{color:#8a817b;font-size:6.5px;line-height:1;letter-spacing:.14em;white-space:nowrap}
+
+@media (max-width:600px){
+  :root{
+    /* Screenshot: 902 CSS px screen - ~120 px native preview chrome = ~782 px. */
+    --crm-shell-h:min(782px, calc(100svh - 120px));
+    --crm-header-h:74px;
+    --crm-bottom-h:76px;
+  }
+
+  html,body{
+    width:100% !important;
+    height:var(--crm-shell-h) !important;
+    min-height:var(--crm-shell-h) !important;
+    max-height:var(--crm-shell-h) !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    overscroll-behavior:none !important;
+    background:#fff !important;
+  }
+
+  body{
+    position:relative !important;
+  }
+
+  .wrap,.app{
+    position:absolute !important;
+    inset:0 !important;
+    width:100% !important;
+    height:var(--crm-shell-h) !important;
+    min-height:0 !important;
+    max-height:var(--crm-shell-h) !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    border:0 !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+    background:#fff !important;
+  }
+
+  /* Always visible inside the shell. */
+  .topbar{
+    position:absolute !important;
+    z-index:100 !important;
+    top:0 !important;
+    left:0 !important;
+    right:0 !important;
+    width:100% !important;
+    height:var(--crm-header-h) !important;
+    min-height:var(--crm-header-h) !important;
+    max-height:var(--crm-header-h) !important;
+    margin:0 !important;
+    padding:8px 16px !important;
+    background:#fff !important;
+    border-bottom:1px solid var(--border) !important;
+  }
+
+  .bottom{
+    position:absolute !important;
+    z-index:110 !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:0 !important;
+    width:100% !important;
+    height:var(--crm-bottom-h) !important;
+    min-height:var(--crm-bottom-h) !important;
+    max-height:var(--crm-bottom-h) !important;
+    margin:0 !important;
+    padding:5px 24px 8px !important;
+    background:#fff !important;
+    border-top:1px solid var(--border) !important;
+    box-shadow:none !important;
+  }
+
+  .site-logo-mark{width:42px;height:42px}
+  .site-logo-name{font-size:12.5px}
+  .site-logo-sub{font-size:6px}
+  .plus{width:46px;height:46px}
+
+  /* The app has exactly one non-scrolling middle viewport. */
+  .page{
+    position:absolute !important;
+    z-index:10 !important;
+    top:var(--crm-header-h) !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:var(--crm-bottom-h) !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    background:#fff !important;
+  }
+
+  .page.active{display:block !important}
+
+  #eventsPage{display:none !important}
+  #eventsPage.active{
+    display:grid !important;
+    grid-template-rows:auto auto minmax(0,1fr) !important;
+    min-height:0 !important;
+    overflow:hidden !important;
+  }
+
+  /* Funnel controls never move vertically. */
+  #eventsPage .toolbar{
+    grid-row:1 !important;
+    margin:0 !important;
+    padding:12px 16px 8px !important;
+    background:#fff !important;
+  }
+  #eventsPage .tool{
+    flex:1 1 0 !important;
+    min-width:0 !important;
+    height:40px !important;
+  }
+  #eventsPage .swipe-hint{
+    grid-row:auto !important;
+    margin:0 !important;
+    padding:2px 16px 8px !important;
+    background:#fff !important;
+  }
+
+  /* Only this region may move. */
+  .stage-frame{
+    grid-row:3 !important;
+    position:relative !important;
+    width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    margin:0 !important;
+    padding:0 16px 6px !important;
+    overflow:hidden !important;
+    touch-action:auto !important;
+    cursor:default !important;
+  }
+
+  /* Pure native iOS horizontal scroll-snap. No mobile JS gesture required. */
+  .stage-track{
+    position:relative !important;
+    display:flex !important;
+    width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    scroll-snap-type:x mandatory !important;
+    scroll-padding:0 !important;
+    scrollbar-width:none !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-x:contain !important;
+    overscroll-behavior-y:none !important;
+    contain:none !important;
+  }
+  .stage-track::-webkit-scrollbar{display:none !important}
+
+  /* One full-width status at a time; only its events scroll vertically. */
+  .stage-page{
+    position:relative !important;
+    inset:auto !important;
+    flex:0 0 100% !important;
+    width:100% !important;
+    min-width:100% !important;
+    max-width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    margin:0 !important;
+    padding:0 0 14px !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    scroll-snap-align:start !important;
+    scroll-snap-stop:always !important;
+    scrollbar-width:none !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-y:contain !important;
+    transform:none !important;
+    transition:none !important;
+    pointer-events:auto !important;
+  }
+  .stage-page::-webkit-scrollbar{display:none !important}
+
+  .stage-head{
+    position:sticky !important;
+    z-index:8 !important;
+    top:0 !important;
+    height:46px !important;
+    min-height:46px !important;
+    margin:0 0 12px !important;
+    padding:0 !important;
+    background:#fff !important;
+    border-bottom:1px solid var(--border) !important;
+  }
+
+  .stage-index{display:none !important}
+  .stage-list{display:grid !important;gap:10px !important;padding:0 0 12px !important}
+
+  /* Other pages scroll only inside the same middle viewport. */
+  .page-inner,.calendar{
+    width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    scrollbar-width:none !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-y:contain !important;
+  }
+  .page-inner{padding:14px 16px 24px !important}
+  .calendar{padding:8px 16px 18px !important}
+  .page-inner::-webkit-scrollbar,.calendar::-webkit-scrollbar{display:none !important}
+
+  .card-head{grid-template-columns:32px minmax(0,1fr) 34px !important;padding:10px 11px !important}
+  .avatar{width:32px !important;height:32px !important}
+  .card-name strong{font-size:15px !important}
+  .card-body{padding:10px 11px 11px !important}
+  .row{min-height:36px !important;font-size:14px !important}
+  .contact-pill{
+    max-width:100% !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    white-space:nowrap !important;
+    font-size:13px !important;
+  }
+}
+
+
+/* v28 — event page + dynamic long-range calendar */
+.event-title-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-left:auto;
+}
+.icon-action{
+  position:relative;
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+  color:#666b72;
+  box-shadow:0 1px 2px rgba(20,25,35,.04);
+}
+.icon-action:hover{background:#f5f6f7}
+.icon-action.has::after{
+  content:"";
+  position:absolute;
+  top:6px;
+  right:6px;
+  width:7px;
+  height:7px;
+  border:2px solid #fff;
+  border-radius:50%;
+  background:#266df0;
+}
+.event-note{
+  margin-top:12px;
+  padding:11px 12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fafafa;
+}
+.event-note-label{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  color:#777b82;
+  font-size:11px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.045em;
+}
+.event-note-label svg{width:15px;height:15px}
+.event-note p{
+  margin:7px 0 0;
+  color:#4f545b;
+  font-size:13px;
+  line-height:1.5;
+  font-weight:500;
+}
+.estimate-cta{
+  width:100%;
+  margin-top:12px;
+  padding:13px 14px;
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr) 20px;
+  gap:11px;
+  align-items:center;
+  border:1px solid #24262a;
+  border-radius:12px;
+  background:#24262a;
+  color:#fff;
+  text-align:left;
+  box-shadow:0 2px 5px rgba(28,40,64,.09);
+}
+.estimate-cta-icon{
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:9px;
+  background:rgba(255,255,255,.06);
+}
+.estimate-cta-icon svg{width:18px;height:18px}
+.estimate-cta strong{
+  display:block;
+  font-size:14px;
+  font-weight:600;
+}
+.estimate-cta span{
+  display:block;
+  margin-top:3px;
+  color:#c9ccd1;
+  font-size:11px;
+  font-weight:500;
+}
+.estimate-cta > svg{width:17px;height:17px;color:#c9ccd1}
+.event-secondary{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:10px;
+}
+.event-secondary button{
+  border:0;
+  background:transparent;
+  color:#a64d48;
+  font-size:11px;
+  font-weight:500;
+}
+.client-actions.single{grid-template-columns:1fr}
+.client-actions.single button{width:100%}
+
+.calendar-nav{
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr) 36px;
+  gap:7px;
+  align-items:center;
+}
+.calendar-nav button{
+  height:36px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+  color:#666b72;
+}
+.calendar-nav-main{
+  height:36px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:0 10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+  overflow:hidden;
+}
+.calendar-nav-main strong{
+  font-size:13px;
+  font-weight:600;
+  white-space:nowrap;
+}
+.calendar-nav-main input{
+  width:20px;
+  min-width:20px;
+  height:24px;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:transparent;
+  opacity:.75;
+}
+.calendar-nav-main input::-webkit-calendar-picker-indicator{
+  margin:0;
+  cursor:pointer;
+}
+.calendar-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin:8px 0 10px;
+}
+.calendar-actions button{
+  height:32px;
+  padding:0 10px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:#fff;
+  color:#676c73;
+  font-size:11px;
+  font-weight:500;
+}
+.calendar-grid.dynamic{
+  grid-template-columns:repeat(7,1fr);
+}
+.calendar-grid.dynamic .day{
+  position:relative;
+  height:46px;
+  border:0;
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  background:#fff;
+}
+.calendar-grid.dynamic .day:nth-child(7n){border-right:0}
+.calendar-grid.dynamic .day.outside{color:#c3c6cb;background:#fcfcfc}
+.calendar-grid.dynamic .day.today{font-weight:600}
+.calendar-grid.dynamic .day.selected{
+  background:#24262a;
+  color:#fff;
+}
+.day-dots{
+  position:absolute;
+  left:50%;
+  bottom:5px;
+  display:flex;
+  gap:2px;
+  transform:translateX(-50%);
+}
+.day-dots i{
+  position:static;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+}
+.calendar-selected{
+  margin-top:10px;
+}
+.calendar-selected-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:7px;
+}
+.calendar-selected-head strong{font-size:13px;font-weight:600}
+.calendar-selected-head span{color:var(--muted);font-size:10px;font-weight:500}
+.calendar-event-list{display:grid;gap:7px}
+.calendar-event-row{
+  width:100%;
+  display:grid;
+  grid-template-columns:4px minmax(0,1fr) 18px;
+  gap:9px;
+  align-items:center;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+  text-align:left;
+}
+.calendar-event-row .bar{
+  width:4px;
+  height:34px;
+  border-radius:4px;
+}
+.calendar-event-row strong{display:block;font-size:13px;font-weight:500}
+.calendar-event-row span{display:block;margin-top:2px;color:var(--muted);font-size:10px}
+.calendar-empty{
+  padding:12px;
+  border:1px dashed var(--border);
+  border-radius:10px;
+  color:#9a9da3;
+  text-align:center;
+  font-size:11px;
+  font-weight:500;
+}
+
+
+/* ============================================================
+   v30 — STABLE STATUS ENGINE
+   One status = one full viewport.
+   No neighboring status can overlap the current status.
+   Vertical scroll belongs only to the current status page.
+   ============================================================ */
+.brand-home{
+  padding:0;
+  border:0;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+.brand-home .site-logo-copy{display:grid}
+.brand-home:focus-visible{
+  outline:2px solid #b8cff8;
+  outline-offset:4px;
+  border-radius:8px;
+}
+
+.stage-frame{
+  position:relative !important;
+  overflow:hidden !important;
+  touch-action:pan-y !important;
+}
+
+.stage-track{
+  position:relative !important;
+  display:block !important;
+  width:100% !important;
+  height:610px !important;
+  min-height:610px !important;
+  max-height:610px !important;
+  overflow:hidden !important;
+  contain:layout paint style !important;
+  scroll-snap-type:none !important;
+  scroll-behavior:auto !important;
+}
+
+.stage-page{
+  --stage-x:100%;
+  --stage-duration:0ms;
+  --stage-pe:none;
+
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  width:100% !important;
+  min-width:100% !important;
+  max-width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:100% !important;
+  margin:0 !important;
+  padding:0 0 14px !important;
+
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+
+  transform:translate3d(var(--stage-x),0,0) !important;
+  transition:transform var(--stage-duration) cubic-bezier(.20,.82,.25,1) !important;
+  pointer-events:var(--stage-pe) !important;
+
+  scroll-snap-align:none !important;
+  scroll-snap-stop:normal !important;
+  scrollbar-width:none !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior-y:contain !important;
+  backface-visibility:hidden !important;
+  will-change:transform !important;
+}
+
+.stage-page::-webkit-scrollbar{display:none !important}
+
+/* Safe first paint before JavaScript initializes. */
+.stage-page[data-index="0"]{--stage-x:0%;--stage-pe:auto}
+.stage-page[data-index="1"]{--stage-x:100%}
+.stage-page[data-index="2"]{--stage-x:200%}
+.stage-page[data-index="3"]{--stage-x:300%}
+.stage-page[data-index="4"]{--stage-x:400%}
+.stage-page[data-index="5"]{--stage-x:500%}
+.stage-page[data-index="6"]{--stage-x:600%}
+
+.stage-head{
+  position:sticky !important;
+  top:0 !important;
+  z-index:8 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  width:100% !important;
+  overflow:hidden !important;
+  background:#fff !important;
+}
+
+.stage-title{
+  min-width:0 !important;
+  max-width:calc(100% - 48px) !important;
+  overflow:hidden !important;
+}
+
+.stage-title strong{
+  min-width:0 !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+.stage-title .count{
+  flex:0 0 auto !important;
+}
+
+.stage-index{
+  flex:0 0 auto !important;
+  white-space:nowrap !important;
+  margin-left:10px !important;
+}
+
+@media(max-width:600px){
+  .stage-track{
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+  }
+
+  .stage-page{
+    height:100% !important;
+    max-height:100% !important;
+  }
+
+  .stage-index{
+    display:none !important;
+  }
+
+  .stage-title{
+    max-width:100% !important;
+  }
+}
+
+
+/* ============================================================
+   v31 — CLIENT READY POLISH
+   - no 1/7, 5/7 counters (they were the source of header collisions)
+   - desktop preview uses the same locked shell idea as mobile
+   - only cards inside a status scroll vertically
+   - no doubled bottom reserve / giant empty tail in preview
+   ============================================================ */
+.stage-index{
+  display:none !important;
+}
+
+.stage-head{
+  gap:10px !important;
+  overflow:hidden !important;
+}
+
+.stage-title{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+}
+
+.stage-title strong{
+  flex:0 1 auto !important;
+  min-width:0 !important;
+  max-width:calc(100% - 48px) !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+.stage-title .count{
+  flex:0 0 auto !important;
+}
+
+.stage-track{
+  isolation:isolate !important;
+  overflow:hidden !important;
+  contain:layout paint style !important;
+}
+
+.stage-page{
+  overflow-x:hidden !important;
+  overscroll-behavior-x:none !important;
+}
+
+.stage-list{
+  padding-bottom:4px !important;
+}
+
+/* Desktop/tablet preview: remove the old double 92/96px bottom reserve.
+   The app becomes a compact fixed shell and the stage viewport takes the
+   exact remaining height. This is what removes the large blank tail. */
+@media (min-width:601px){
+  .wrap{
+    min-height:100vh;
+    align-items:flex-start;
+  }
+
+  .app{
+    width:min(100%,430px) !important;
+    height:min(790px,calc(100vh - 28px)) !important;
+    min-height:680px !important;
+    max-height:790px !important;
+    overflow:hidden !important;
+  }
+
+  .topbar{
+    position:absolute !important;
+    z-index:30 !important;
+    top:0 !important;
+    left:0 !important;
+    right:0 !important;
+    height:64px !important;
+  }
+
+  .bottom{
+    position:absolute !important;
+    z-index:30 !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:0 !important;
+    height:78px !important;
+  }
+
+  .page{
+    position:absolute !important;
+    top:64px !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:78px !important;
+    min-height:0 !important;
+    height:auto !important;
+    padding-bottom:0 !important;
+    overflow:hidden !important;
+  }
+
+  #eventsPage.active{
+    display:grid !important;
+    grid-template-rows:auto auto minmax(0,1fr) !important;
+    min-height:0 !important;
+  }
+
+  #eventsPage .toolbar{
+    grid-row:1 !important;
+    padding:14px 16px 10px !important;
+  }
+
+  #eventsPage .swipe-hint{
+    grid-row:2 !important;
+    padding:0 16px 8px !important;
+  }
+
+  .stage-frame{
+    grid-row:3 !important;
+    min-height:0 !important;
+    height:100% !important;
+    padding:0 16px 8px !important;
+    overflow:hidden !important;
+  }
+
+  .stage-track{
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+  }
+
+  .stage-page{
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    padding-bottom:6px !important;
+  }
+
+  .page-inner,
+  .calendar{
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    overflow-y:auto !important;
+    scrollbar-width:none !important;
+    overscroll-behavior-y:contain !important;
+  }
+
+  .page-inner::-webkit-scrollbar,
+  .calendar::-webkit-scrollbar{
+    display:none !important;
+  }
+
+  .calendar{
+    padding-bottom:16px !important;
+  }
+}
+
+/* On mobile keep the locked shell that was approved, but remove any extra
+   stage bottom padding so cards can approach the fixed nav naturally. */
+@media (max-width:600px){
+  .stage-frame{
+    padding-bottom:2px !important;
+  }
+  .stage-page{
+    padding-bottom:4px !important;
+  }
+  .stage-list{
+    padding-bottom:2px !important;
+  }
+}
+
+
+/* v31 interaction polish */
+.search-results{display:grid;gap:8px;margin-top:10px}
+.search-result{
+  width:100%;display:grid;grid-template-columns:34px minmax(0,1fr) 18px;gap:9px;align-items:center;
+  padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;text-align:left
+}
+.search-result .avatar{width:34px;height:34px}
+.search-result strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500}
+.search-result span{display:block;margin-top:2px;color:var(--muted);font-size:11px}
+.mini-note{padding:10px 11px;border:1px solid var(--border);border-radius:10px;background:#fafafa;color:var(--muted);font-size:12px;line-height:1.45}
+
+
+/* ============================================================
+   v32 — refined motion + icon alignment
+   Subtle, fast, consistent UI motion. No layout-shifting animation.
+   ============================================================ */
+:root{
+  --motion-fast:180ms;
+  --motion-ui:260ms;
+  --motion-page:320ms;
+  --ease-ui:cubic-bezier(.2,0,0,1);
+  --ease-soft:cubic-bezier(.22,.78,.22,1);
+  --ease-press:cubic-bezier(.2,.9,.25,1.08);
+}
+
+/* Precise icon centering */
+.icon-action{
+  align-items:center !important;
+  justify-items:center !important;
+  transition:
+    transform var(--motion-fast) var(--ease-ui),
+    background-color var(--motion-fast) var(--ease-ui),
+    border-color var(--motion-fast) var(--ease-ui),
+    box-shadow var(--motion-fast) var(--ease-ui) !important;
+}
+.icon-action svg{
+  display:block !important;
+  width:18px !important;
+  height:18px !important;
+  margin:0 !important;
+  transform-origin:50% 50%;
+}
+.icon-action .icon-pencil{
+  width:17.5px !important;
+  height:17.5px !important;
+  transform:translate3d(0,-.15px,0);
+}
+.icon-action:hover{
+  background:#f6f7f8;
+  border-color:#d9dce0;
+  box-shadow:0 2px 5px rgba(20,25,35,.06);
+}
+.icon-action:active{
+  transform:scale(.94);
+  background:#f1f2f3;
+}
+
+/* Estimate icon/copy alignment — avoids the old generic span rule shifting the icon */
+.estimate-cta-icon{
+  display:grid !important;
+  place-items:center !important;
+  margin:0 !important;
+  color:#d7d9dd !important;
+  line-height:0 !important;
+}
+.estimate-cta-icon svg.icon-estimate{
+  display:block !important;
+  width:18px !important;
+  height:18px !important;
+  margin:0 !important;
+  transform:none !important;
+}
+.estimate-cta-copy{
+  display:block !important;
+  min-width:0;
+  margin:0 !important;
+  color:inherit !important;
+}
+.estimate-cta-copy strong{
+  display:block;
+  margin:0 !important;
+}
+.estimate-cta-copy .estimate-cta-meta{
+  display:block !important;
+  margin-top:3px !important;
+  color:#c9ccd1 !important;
+  font-size:11px !important;
+  font-weight:500 !important;
+}
+.estimate-cta-chevron{
+  display:block !important;
+  width:17px !important;
+  height:17px !important;
+  margin:0 !important;
+  color:#c9ccd1;
+}
+.estimate-cta{
+  transition:
+    transform var(--motion-fast) var(--ease-ui),
+    box-shadow var(--motion-ui) var(--ease-ui),
+    background-color var(--motion-fast) var(--ease-ui) !important;
+}
+.estimate-cta:hover{
+  background:#1f2124;
+  box-shadow:0 7px 18px rgba(28,40,64,.13);
+}
+.estimate-cta:active{
+  transform:scale(.988);
+  box-shadow:0 2px 7px rgba(28,40,64,.10);
+}
+
+/* Bottom navigation: tactile but restrained */
+.nav{
+  transition:
+    color var(--motion-ui) var(--ease-ui),
+    transform var(--motion-fast) var(--ease-ui) !important;
+}
+.nav svg,
+.nav span{
+  transition:
+    transform var(--motion-ui) var(--ease-soft),
+    opacity var(--motion-ui) var(--ease-ui),
+    color var(--motion-ui) var(--ease-ui) !important;
+}
+.nav.active svg{
+  transform:translate3d(0,-1px,0) scale(1.07);
+}
+.nav.active span{
+  transform:translate3d(0,-.5px,0);
+}
+.nav.nav-activate svg{
+  animation:navIconSettle 320ms var(--ease-press) both;
+}
+@keyframes navIconSettle{
+  0%{transform:translate3d(0,1px,0) scale(.92)}
+  62%{transform:translate3d(0,-1.5px,0) scale(1.10)}
+  100%{transform:translate3d(0,-1px,0) scale(1.07)}
+}
+
+.plus{
+  transition:
+    transform var(--motion-ui) var(--ease-press),
+    box-shadow var(--motion-ui) var(--ease-ui),
+    background-color var(--motion-fast) var(--ease-ui) !important;
+}
+.plus:hover{
+  transform:translate3d(0,-1px,0);
+  box-shadow:0 7px 16px rgba(28,40,64,.15);
+}
+.plus:active{
+  transform:translate3d(0,0,0) scale(.92);
+  box-shadow:0 2px 6px rgba(28,40,64,.10);
+}
+.plus.plus-pulse{
+  animation:plusSettle 360ms var(--ease-press) both;
+}
+@keyframes plusSettle{
+  0%{transform:scale(.92)}
+  58%{transform:scale(1.045)}
+  100%{transform:scale(1)}
+}
+
+/* Funnel / Calendar controls */
+.tool{
+  transition:
+    color var(--motion-ui) var(--ease-ui),
+    background-color var(--motion-ui) var(--ease-ui),
+    border-color var(--motion-ui) var(--ease-ui),
+    box-shadow var(--motion-ui) var(--ease-ui),
+    transform var(--motion-fast) var(--ease-ui) !important;
+}
+.tool:hover:not(.active){
+  background:#fafafa;
+  border-color:#dbdde0;
+}
+.tool:active{transform:scale(.975)}
+.tool.active{
+  box-shadow:0 4px 10px rgba(31,32,35,.10);
+}
+.tool.active svg{
+  animation:tabIconSettle 300ms var(--ease-press) both;
+}
+@keyframes tabIconSettle{
+  0%{transform:scale(.92);opacity:.72}
+  65%{transform:scale(1.07);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+
+/* New page reveal. Keeps the shell/header/nav stationary. */
+.page.motion-enter{
+  animation:pageReveal var(--motion-page) var(--ease-ui) both;
+}
+@keyframes pageReveal{
+  from{opacity:0;transform:translate3d(0,7px,0) scale(.997)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+
+/* Funnel/calendar panel switch */
+.panel-motion-in{
+  animation:panelReveal 300ms var(--ease-ui) both;
+}
+@keyframes panelReveal{
+  from{opacity:0;transform:translate3d(0,5px,0)}
+  to{opacity:1;transform:translate3d(0,0,0)}
+}
+
+/* Bottom sheets / overlays */
+.overlay{
+  display:flex !important;
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:
+    opacity 190ms var(--ease-ui),
+    visibility 0s linear 280ms !important;
+}
+.overlay.open{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+  transition-delay:0s !important;
+}
+.sheet{
+  transform:translate3d(0,18px,0) scale(.996);
+  opacity:.985;
+  transition:
+    transform 320ms var(--ease-soft),
+    opacity 220ms var(--ease-ui) !important;
+}
+.overlay.open .sheet{
+  transform:translate3d(0,0,0) scale(1);
+  opacity:1;
+}
+
+/* Frequent controls: subtle press feedback */
+.back,
+.close,
+.add-more,
+.action-row,
+.client-actions button,
+.primary-wide{
+  transition:
+    transform var(--motion-fast) var(--ease-ui),
+    background-color var(--motion-fast) var(--ease-ui),
+    border-color var(--motion-fast) var(--ease-ui),
+    box-shadow var(--motion-ui) var(--ease-ui) !important;
+}
+.back:active,
+.close:active,
+.add-more:active,
+.action-row:active,
+.client-actions button:active,
+.primary-wide:active{
+  transform:scale(.975);
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+
+
+/* ============================================================
+   v34 — interface freeze candidate
+   Navigation clarity, real-integration affordances and input polish.
+   ============================================================ */
+*{-webkit-tap-highlight-color:transparent}
+button,a,input,textarea,select{outline:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+  outline:2px solid rgba(57,126,232,.34) !important;
+  outline-offset:2px;
+}
+
+/* Compact stage navigator. Swipe remains available, but is no longer the only way to move. */
+.stage-switcher{padding:0 16px 8px;background:#fff;min-width:0}
+.stage-rail{
+  display:flex;gap:6px;overflow-x:auto;padding:1px 1px 4px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity
+}
+.stage-rail::-webkit-scrollbar{display:none}
+.stage-chip{
+  flex:0 0 auto;min-height:31px;max-width:168px;padding:0 8px;
+  display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);
+  border-radius:9px;background:#fff;color:#73777e;font-size:10px;font-weight:600;
+  transition:background var(--motion-ui) var(--ease-ui),border-color var(--motion-ui) var(--ease-ui),color var(--motion-ui) var(--ease-ui),transform var(--motion-fast) var(--ease-ui);
+  scroll-snap-align:center
+}
+.stage-chip:active{transform:scale(.97)}
+.stage-chip.active{background:#24262a;border-color:#24262a;color:#fff;box-shadow:0 3px 8px rgba(31,32,35,.09)}
+.stage-chip-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.stage-chip-name{max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stage-chip-count{min-width:18px;height:18px;padding:0 5px;display:grid;place-items:center;border-radius:6px;background:#f1f2f3;color:#757980;font-size:9px}
+.stage-chip.active .stage-chip-count{background:rgba(255,255,255,.14);color:#fff}
+.stage-switcher .swipe-hint{padding:3px 1px 0;color:#a3a6ab;font-size:9px}
+
+.card{transition:transform var(--motion-fast) var(--ease-ui),border-color var(--motion-ui) var(--ease-ui),box-shadow var(--motion-ui) var(--ease-ui)}
+.card.clickable:hover{border-color:#d6d9dd;box-shadow:0 6px 16px -8px rgba(20,25,35,.18)}
+.card.clickable:active{transform:scale(.992)}
+.card-subline{display:flex !important;align-items:center;gap:6px;min-width:0;white-space:nowrap}
+.card-subline>.source-badge{margin-top:0}
+.source-badge{
+  display:inline-flex;align-items:center;min-height:19px;padding:0 6px;border-radius:6px;
+  background:#edf4ff;color:#3974c8;font-size:8px;font-style:normal;font-weight:600;letter-spacing:.01em;white-space:nowrap
+}
+.source-badge.fresh{background:#eaf7f0;color:#23845a}
+
+.event-origin{display:flex;align-items:center;gap:8px;margin-top:9px;color:#8b8f95;font-size:10px;font-weight:500}
+.event-origin[hidden]{display:none !important}
+.event-quick-actions{display:grid;grid-template-columns:.78fr 1.22fr;gap:8px;margin-top:12px}
+.event-quick{
+  min-height:42px;padding:0 11px;display:flex;align-items:center;justify-content:center;gap:7px;
+  border:1px solid var(--border);border-radius:10px;background:#fff;color:#555a61;
+  font-size:11px;font-weight:600;text-decoration:none;
+  transition:transform var(--motion-fast) var(--ease-ui),background var(--motion-fast) var(--ease-ui),border-color var(--motion-fast) var(--ease-ui)
+}
+.event-quick svg{width:16px;height:16px}
+.event-quick.primary{background:#24262a;border-color:#24262a;color:#fff}
+.event-quick:active{transform:scale(.975)}
+.event-quick.disabled{opacity:.45}
+.event-finance{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.event-finance>div{min-width:0;padding:9px 10px;border:1px solid var(--border);border-radius:10px;background:#fff}
+.event-finance span{display:block;color:#92969c;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.025em}
+.event-finance strong{display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600}
+.event-finance .profit strong{color:#24865d}
+.event-finance.negative .profit strong{color:#b84e49}
+.event-finance.empty{opacity:.55}
+
+/* Totals stay reachable even with a long real estimate. */
+.estimate-dock{
+  position:sticky;bottom:-24px;z-index:8;margin:10px -16px -24px;padding:8px 16px 24px;
+  background:linear-gradient(to bottom,rgba(255,255,255,.88),#fff 18px);
+  backdrop-filter:blur(10px)
+}
+.estimate-dock .estimate-summary{margin-top:0;box-shadow:0 -6px 18px -16px rgba(20,25,35,.28),var(--shadow)}
+.estimate-item .internal-badge{border:1px solid #e6e7e9}
+
+/* Rental catalog is ready for a larger live product set. */
+.rental-tools{display:grid;gap:8px;margin-bottom:12px}
+.rental-search{
+  height:40px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--border);
+  border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(20,25,35,.04)
+}
+.rental-search svg{width:16px;height:16px;color:#8a8e94;flex:0 0 auto}
+.rental-search input{width:100%;min-width:0;border:0;background:transparent;font-size:13px}
+.rental-search input::placeholder{color:#a3a6ab}
+.rental-filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rental-filters::-webkit-scrollbar{display:none}
+.rental-filter{
+  flex:0 0 auto;height:30px;padding:0 9px;border:1px solid var(--border);border-radius:9px;
+  background:#fff;color:#73777e;font-size:10px;font-weight:600;transition:.18s ease
+}
+.rental-filter.active{background:#24262a;border-color:#24262a;color:#fff}
+.rental-filter:active{transform:scale(.97)}
+
+.search-section-label{padding:7px 1px 3px;color:#9a9ea4;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.search-product-avatar{display:grid;place-items:center}
+.search-product-avatar svg{width:17px;height:17px}
+
+/* Sheets feel lighter and are easier to dismiss. */
+.overlay{backdrop-filter:blur(1.5px)}
+.sheet{overscroll-behavior:contain}
+.grab{height:5px;background:#d5d7da}
+
+@media(max-width:600px){
+  #eventsPage{grid-template-rows:auto auto minmax(0,1fr) !important}
+  #eventsPage .stage-switcher{grid-row:2 !important;padding:1px 16px 7px !important}
+  #eventsPage .swipe-hint{padding:2px 1px 0 !important}
+  .stage-frame{grid-row:3 !important}
+  .stage-chip{max-width:150px}
+  .stage-chip-name{max-width:98px}
+  .event-quick-actions{grid-template-columns:.72fr 1.28fr}
+}
+
+
+/* ============================================================
+   v35 — premium motion / contact identity / priority polish
+   Principles:
+   - purposeful, short motion
+   - direction-aware page transitions
+   - deterministic person colors
+   - semantic urgency labels, never color-only
+   - reduced-motion fallback
+   ============================================================ */
+
+:root{
+  --motion-micro:150ms;
+  --motion-control:220ms;
+  --motion-view:360ms;
+  --motion-sheet:380ms;
+  --ease-premium:cubic-bezier(.22,.78,.22,1);
+  --ease-emphasized:cubic-bezier(.2,.8,.2,1);
+  --ease-exit:cubic-bezier(.4,0,1,1);
+}
+
+/* Type/details: better numeric rhythm and slightly cleaner rendering */
+body{
+  text-rendering:optimizeLegibility;
+  font-synthesis:none;
+}
+.footer-money,
+.event-finance strong,
+.estimate-summary strong,
+.client-preview-total strong,
+.list-side strong,
+.calendar-event span,
+.field strong{
+  font-variant-numeric:tabular-nums;
+}
+
+/* View Transition API: shell stays stable, only the active CRM page moves. */
+.page.active{
+  view-transition-name:crm-page;
+}
+::view-transition-old(root),
+::view-transition-new(root){
+  animation:none !important;
+  mix-blend-mode:normal;
+}
+::view-transition-group(crm-page){
+  animation-duration:var(--motion-view);
+  animation-timing-function:var(--ease-premium);
+}
+::view-transition-old(crm-page),
+::view-transition-new(crm-page){
+  backface-visibility:hidden;
+  mix-blend-mode:normal;
+}
+
+/* Forward = drill into detail */
+html[data-crm-nav-direction="forward"]::view-transition-old(crm-page){
+  animation:crmOldForward 270ms var(--ease-exit) both;
+}
+html[data-crm-nav-direction="forward"]::view-transition-new(crm-page){
+  animation:crmNewForward var(--motion-view) var(--ease-premium) both;
+}
+@keyframes crmOldForward{
+  to{opacity:.12;transform:translate3d(-14px,0,0) scale(.994)}
+}
+@keyframes crmNewForward{
+  from{opacity:0;transform:translate3d(20px,0,0) scale(.995)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+
+/* Back = return to parent */
+html[data-crm-nav-direction="back"]::view-transition-old(crm-page){
+  animation:crmOldBack 250ms var(--ease-exit) both;
+}
+html[data-crm-nav-direction="back"]::view-transition-new(crm-page){
+  animation:crmNewBack var(--motion-view) var(--ease-premium) both;
+}
+@keyframes crmOldBack{
+  to{opacity:.12;transform:translate3d(16px,0,0) scale(.995)}
+}
+@keyframes crmNewBack{
+  from{opacity:0;transform:translate3d(-16px,0,0) scale(.996)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+
+/* Peer switch = Events <-> Rental */
+html[data-crm-nav-direction="switch"]::view-transition-old(crm-page){
+  animation:crmOldSwitch 210ms ease both;
+}
+html[data-crm-nav-direction="switch"]::view-transition-new(crm-page){
+  animation:crmNewSwitch 310ms var(--ease-premium) both;
+}
+@keyframes crmOldSwitch{
+  to{opacity:0;transform:translate3d(0,-4px,0) scale(.998)}
+}
+@keyframes crmNewSwitch{
+  from{opacity:0;transform:translate3d(0,7px,0) scale(.998)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+
+/* Fallback animation for browsers without View Transitions. */
+.page.motion-enter{
+  animation:pageRevealPremium 320ms var(--ease-premium) both !important;
+}
+@keyframes pageRevealPremium{
+  from{opacity:0;transform:translate3d(0,7px,0) scale(.998)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+
+/* Cards get a quiet "settling" motion instead of popping in. */
+.stage-page[aria-hidden="false"] .card{
+  animation:cardSettle 300ms var(--ease-premium) both;
+}
+.stage-page[aria-hidden="false"] .card:nth-child(2){animation-delay:22ms}
+.stage-page[aria-hidden="false"] .card:nth-child(3){animation-delay:44ms}
+.stage-page[aria-hidden="false"] .card:nth-child(4){animation-delay:66ms}
+@keyframes cardSettle{
+  from{opacity:0;transform:translate3d(0,6px,0)}
+  to{opacity:1;transform:translate3d(0,0,0)}
+}
+
+/* Softer premium press feedback */
+.card.clickable,
+.list-card,
+.calendar-event,
+.action-row,
+.event-quick,
+.tool,
+.stage-chip,
+.contact-pill{
+  -webkit-tap-highlight-color:transparent;
+}
+.card.clickable:active,
+.list-card:active,
+.calendar-event:active{
+  transform:scale(.994);
+}
+.event-quick:active,
+.tool:active,
+.stage-chip:active{
+  transform:scale(.975);
+}
+
+/* Contact identity */
+.contact-pill{
+  position:relative;
+  text-decoration:none;
+  border:1px solid transparent;
+  transition:
+    transform var(--motion-micro) var(--ease-premium),
+    background-color var(--motion-control) var(--ease-premium),
+    border-color var(--motion-control) var(--ease-premium),
+    box-shadow var(--motion-control) var(--ease-premium);
+}
+.contact-pill:hover{
+  background:#eef0f2;
+  border-color:#e1e3e6;
+  box-shadow:0 3px 8px -6px rgba(20,25,35,.28);
+}
+.contact-pill:active{
+  transform:scale(.975);
+  background:#e9ebee;
+}
+.contact-avatar{
+  background:var(--contact-color,#8e8e93) !important;
+  color:#fff !important;
+  border:0 !important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.035);
+}
+.contact-pill::after{
+  content:"";
+  width:5px;height:5px;
+  margin-left:1px;
+  border-right:1.4px solid #a3a7ad;
+  border-bottom:1.4px solid #a3a7ad;
+  transform:rotate(-45deg);
+  opacity:.72;
+}
+
+/* Contact inside detail page */
+.event-contact-call{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  color:inherit;
+  text-decoration:none;
+}
+.event-contact-call .contact-avatar{
+  width:25px;height:25px;
+  display:grid;place-items:center;
+  flex:0 0 auto;
+  border-radius:50%;
+  font-size:10px;
+  font-weight:650;
+}
+.event-contact-copy{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.event-contact-call:active{
+  opacity:.72;
+}
+
+/* Priority / urgency */
+.priority-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-height:19px;
+  padding:0 6px;
+  border:1px solid transparent;
+  border-radius:6px;
+  font-size:8px;
+  font-style:normal;
+  font-weight:650;
+  line-height:1;
+  letter-spacing:.01em;
+  white-space:nowrap;
+}
+.priority-badge::before{
+  content:"";
+  width:5px;height:5px;border-radius:50%;
+  background:currentColor;
+}
+.priority-badge.priority-urgent{
+  color:#b63f3a;
+  background:#fff0ef;
+  border-color:#f3d0cd;
+}
+.priority-badge.priority-high{
+  color:#9a641a;
+  background:#fff7e8;
+  border-color:#f2dfb9;
+}
+.priority-badge.priority-normal{
+  color:#747981;
+  background:#f3f4f5;
+  border-color:#e3e5e8;
+}
+.card.priority-urgent{
+  border-color:#efd7d5;
+  box-shadow:inset 3px 0 0 #d9554f,var(--shadow);
+}
+.card.priority-high{
+  border-color:#eee1cb;
+  box-shadow:inset 3px 0 0 #d99b35,var(--shadow);
+}
+
+/* Event title status stack */
+.event-status-stack{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.event-status-stack .priority-badge{
+  min-height:30px;
+  padding:0 9px;
+  border-radius:9px;
+  font-size:10px;
+}
+
+/* Bottom sheets: a little more depth, still restrained */
+.overlay{
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+}
+.sheet{
+  box-shadow:0 -18px 50px rgba(20,25,35,.14);
+  transition:
+    transform var(--motion-sheet) var(--ease-premium),
+    opacity 220ms var(--ease-premium) !important;
+}
+.overlay.open .sheet{
+  transform:translate3d(0,0,0) scale(1);
+}
+
+/* Active bottom-nav state gets a subtle surface, not a bright color block. */
+.nav{
+  position:relative;
+  isolation:isolate;
+}
+.nav::before{
+  content:"";
+  position:absolute;
+  inset:3px 8px;
+  z-index:-1;
+  border-radius:12px;
+  background:#f1f3f6;
+  opacity:0;
+  transform:scale(.82);
+  transition:
+    opacity var(--motion-control) var(--ease-premium),
+    transform var(--motion-control) var(--ease-premium);
+}
+.nav.active::before{
+  opacity:1;
+  transform:scale(1);
+}
+
+/* Fallback / accessibility */
+@media (prefers-reduced-motion:reduce){
+  .stage-page[aria-hidden="false"] .card{animation:none !important}
+  ::view-transition-old(crm-page),
+  ::view-transition-new(crm-page){animation:none !important}
+}
+
+
+/* Shared-element transition: event card gently expands into the detail summary. */
+::view-transition-group(crm-shared-card){
+  animation-duration:390ms;
+  animation-timing-function:var(--ease-premium);
+}
+::view-transition-old(crm-shared-card),
+::view-transition-new(crm-shared-card){
+  mix-blend-mode:normal;
+  overflow:clip;
+  border-radius:12px;
+}
+
+
+/* ============================================================
+   v36 — motion correction pass
+   - manual WAAPI page transitions (works without View Transition API)
+   - smoother stage swipe compositor path
+   - compact bottom-nav active indicator
+   - no horizontal bottom border
+   ============================================================ */
+
+:root{
+  --motion-page-v36:410ms;
+  --motion-stage-v36:440ms;
+  --ease-page-v36:cubic-bezier(.16,1,.3,1);
+  --ease-stage-v36:cubic-bezier(.16,1,.3,1);
+}
+
+/* Disable the previous API-specific page naming.
+   v36 uses a predictable same-document WAAPI transition instead. */
+.page.active{
+  view-transition-name:none !important;
+}
+
+/* Both old and new pages stay rendered only for the transition itself. */
+.page.crm-transition-visible{
+  display:block !important;
+  pointer-events:none !important;
+  will-change:transform,opacity;
+  backface-visibility:hidden;
+  transform:translateZ(0);
+}
+#eventsPage.crm-transition-visible{
+  display:grid !important;
+  grid-template-rows:auto auto minmax(0,1fr) !important;
+}
+.page.crm-transition-old{
+  z-index:10 !important;
+}
+.page.crm-transition-new{
+  z-index:11 !important;
+}
+
+/* The actual page motion is done by Element.animate().
+   Keep CSS fallback restrained. */
+.page.crm-transition-fallback{
+  animation:crmFallbackV36 var(--motion-page-v36) var(--ease-page-v36) both !important;
+}
+@keyframes crmFallbackV36{
+  from{opacity:0;transform:translate3d(22px,0,0) scale(.998)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+
+/* Status pages: compositor-only transform, calmer settling curve. */
+.stage-page{
+  transition:
+    transform var(--stage-duration) var(--ease-stage-v36) !important;
+  transform-origin:50% 50%;
+  will-change:transform !important;
+  backface-visibility:hidden !important;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Don't animate every card again after the entire stage has already slid.
+   This was adding a second visual cadence and made the switch feel choppy. */
+.stage-page[aria-hidden="false"] .card{
+  animation:none !important;
+}
+
+/* Card hover should glide, not snap. */
+.card{
+  transition:
+    transform 260ms var(--ease-page-v36),
+    border-color 320ms var(--ease-page-v36),
+    box-shadow 340ms var(--ease-page-v36),
+    background-color 300ms var(--ease-page-v36) !important;
+}
+.card.clickable:hover{
+  transform:translate3d(0,-1px,0);
+  border-color:#d9dce0;
+  box-shadow:0 8px 22px -13px rgba(20,25,35,.22);
+}
+.card.clickable:active{
+  transform:translate3d(0,0,0) scale(.994);
+}
+
+/* Bottom navigation:
+   no wide active capsule, no horizontal line across the UI. */
+.bottom{
+  border-top:0 !important;
+  background:rgba(255,255,255,.985) !important;
+  box-shadow:0 -9px 28px rgba(26,31,40,.055) !important;
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+/* Kill the old wide grey active surface. */
+.nav::before{
+  display:none !important;
+}
+
+/* Compact active state: dark icon + label + short underline. */
+.nav{
+  position:relative;
+  width:max-content;
+  min-width:94px;
+  justify-self:center;
+  padding:6px 12px 9px;
+  border-radius:12px;
+  color:#92969d;
+  transition:
+    color 280ms var(--ease-page-v36),
+    transform 180ms var(--ease-page-v36) !important;
+}
+.nav::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:1px;
+  width:22px;
+  height:2.5px;
+  border-radius:999px;
+  background:#25272b;
+  opacity:0;
+  transform:translate3d(-50%,3px,0) scaleX(.45);
+  transition:
+    opacity 240ms var(--ease-page-v36),
+    transform 320ms var(--ease-page-v36);
+}
+.nav.active{
+  color:#25272b !important;
+}
+.nav.active::after{
+  opacity:1;
+  transform:translate3d(-50%,0,0) scaleX(1);
+}
+.nav.active svg{
+  transform:translate3d(0,-.5px,0) scale(1.035) !important;
+}
+.nav.active span{
+  transform:none !important;
+  font-weight:600;
+}
+.nav.nav-activate svg{
+  animation:none !important;
+}
+
+/* Contact links remain real links and should not look like nested controls. */
+.contact-call,
+.event-contact-call{
+  touch-action:manipulation;
+  cursor:pointer;
+}
+
+/* Do not waste compositor work on animations the user has disabled. */
+@media(prefers-reduced-motion:reduce){
+  .page.crm-transition-visible,
+  .stage-page,
+  .card{
+    animation:none !important;
+    transition:none !important;
+  }
+}
+
+
+/* ============================================================
+   v44 — cross-platform release candidate
+   Desktop keeps the v36 motion system.
+   Mobile returns to the old stable native iOS scroll-snap path.
+   ============================================================ */
+:root{--v43-ease:cubic-bezier(.16,1,.3,1);--v43-exit:cubic-bezier(.4,0,.2,1)}
+
+/* Priority is communicated by the badge only. */
+.card.priority-urgent,.card.priority-high{border-color:var(--border) !important;box-shadow:var(--shadow) !important}
+.card.priority-urgent:hover,.card.priority-high:hover{border-color:#d9dce0 !important;box-shadow:0 8px 22px -13px rgba(20,25,35,.22) !important}
+
+/* Faster but calm sheet opening. */
+.overlay{background:rgba(16,17,19,0);transition:background-color 220ms ease,opacity 190ms ease,visibility 0s linear 300ms !important}
+.overlay.open{background:rgba(16,17,19,.18)}
+.sheet{transform:translate3d(0,28px,0) scale(.99) !important;opacity:.96 !important;transition:transform 340ms var(--v43-ease),opacity 220ms ease !important}
+.overlay.open .sheet{transform:translate3d(0,0,0) scale(1) !important;opacity:1 !important}
+.plus.plus-pulse{animation:v43Plus 380ms var(--v43-ease) both !important}
+@keyframes v43Plus{0%{transform:scale(1)}30%{transform:scale(.95)}72%{transform:scale(1.012)}100%{transform:scale(1)}}
+
+/* Cleaner form text / placeholders. */
+.form label{gap:6px !important;color:#73777e !important;font-size:10.5px !important;font-weight:550 !important}
+.form input,.form textarea,.form select{color:#25282d !important;background:#fff !important;border-color:#dfe2e6 !important;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;font-size:14px !important;font-weight:500 !important;line-height:1.4 !important;transition:border-color 180ms ease,box-shadow 200ms ease !important}
+.form input::placeholder,.form textarea::placeholder,.search-command-v43 input::placeholder{color:#a6abb1 !important;opacity:1 !important;font-size:13px !important;font-weight:400 !important}
+.form input:focus,.form textarea:focus,.form select:focus{border-color:#bdc2ca !important;box-shadow:0 0 0 3px rgba(48,55,65,.05)}
+
+/* Modern search. */
+.search-sheet-v43{max-height:82% !important;padding:8px 14px 22px !important}
+.search-head-v43{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px}.search-head-v43>div{display:grid;gap:3px}.search-head-v43 strong{font-size:16px;font-weight:650;letter-spacing:-.015em}.search-head-v43 span{color:#90949a;font-size:10px}
+.search-command-v43{height:46px;display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:9px;padding:0 11px;border:1px solid #dde0e4;border-radius:12px;background:#f7f8f9;transition:border-color 180ms ease,background 180ms ease,box-shadow 200ms ease}.search-command-v43:focus-within{border-color:#c8cdd4;background:#fff;box-shadow:0 0 0 3px rgba(48,55,65,.05)}.search-command-v43>svg{width:18px;height:18px;color:#7f848b}.search-command-v43 input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#25282d;font:500 14px/1.2 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.search-shortcut-v43{min-width:33px;height:24px;display:grid;place-items:center;padding:0 6px;border:1px solid #e1e3e6;border-radius:7px;background:#fff;color:#9a9ea4;font-size:9px;font-weight:600}
+.search-scopes-v43{display:flex;gap:6px;margin:10px 0 2px}.search-scopes-v43 button{height:29px;padding:0 10px;border:1px solid transparent;border-radius:999px;background:transparent;color:#858a91;font:600 10px/1 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;transition:background 170ms ease,color 170ms ease,transform 150ms var(--v43-ease)}.search-scopes-v43 button.active{background:#25272b;color:#fff}.search-scopes-v43 button:active{transform:scale(.96)}
+.search-results{display:grid !important;gap:2px !important;margin-top:12px !important}.search-section-label{padding:11px 8px 5px !important;color:#a0a4aa !important;font-size:8px !important;letter-spacing:.11em !important}.search-result{min-height:54px;grid-template-columns:36px minmax(0,1fr) 18px !important;gap:10px !important;padding:8px !important;border:0 !important;border-radius:11px !important;background:transparent !important;transition:background 170ms ease,transform 150ms var(--v43-ease) !important}.search-result:hover{background:#f5f6f7 !important}.search-result:active{transform:scale(.992);background:#f0f2f4 !important}.search-result .avatar{width:36px !important;height:36px !important;border-radius:10px !important;background:#f2f3f4}.search-result strong{font-size:12.5px !important;font-weight:600 !important}.search-result span{margin-top:3px !important;color:#95999f !important;font-size:9.5px !important}
+
+/* Safe funnel/calendar exit+enter. */
+.v43-panel-out{animation:v43PanelOut 120ms var(--v43-exit) both !important}.v43-panel-in{animation:v43PanelIn 210ms var(--v43-ease) both !important}@keyframes v43PanelOut{from{opacity:1;transform:translate3d(0,0,0)}to{opacity:0;transform:translate3d(0,-3px,0)}}@keyframes v43PanelIn{from{opacity:0;transform:translate3d(0,5px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+
+button,a,.card.clickable,.stage-chip,.tool{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+
+@media(max-width:600px){
+  .search-shortcut-v43{display:none}.search-command-v43{grid-template-columns:20px minmax(0,1fr)}
+  /* Critical: native iOS status scrolling owns touch. */
+  .stage-frame{touch-action:auto !important}
+  .stage-track{touch-action:pan-x pan-y !important}
+  .stage-page{touch-action:auto !important}
+}
+
+
+/* v44 MOBILE BASELINE RESTORE: derived from iphone17air_stable_v24.
+   This block intentionally comes last and overrides every later desktop
+   stage-geometry experiment. */
+@media(max-width:600px){
+  .stage-frame{
+    position:relative !important;
+    width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    overflow:hidden !important;
+    touch-action:auto !important;
+    cursor:default !important;
+  }
+  .stage-track{
+    position:relative !important;
+    display:flex !important;
+    width:100% !important;
+    min-width:100% !important;
+    max-width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    scroll-snap-type:x mandatory !important;
+    scroll-padding:0 !important;
+    scrollbar-width:none !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-x:contain !important;
+    overscroll-behavior-y:none !important;
+    contain:none !important;
+    transform:none !important;
+    transition:none !important;
+    touch-action:pan-x pan-y !important;
+  }
+  .stage-track::-webkit-scrollbar{display:none !important}
+  .stage-page{
+    position:relative !important;
+    inset:auto !important;
+    display:block !important;
+    flex:0 0 100% !important;
+    width:100% !important;
+    min-width:100% !important;
+    max-width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    margin:0 !important;
+    padding:0 0 4px !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    transform:none !important;
+    transition:none !important;
+    pointer-events:auto !important;
+    scroll-snap-align:start !important;
+    scroll-snap-stop:always !important;
+    scrollbar-width:none !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-y:contain !important;
+    will-change:auto !important;
+    backface-visibility:visible !important;
+    touch-action:auto !important;
+  }
+  .stage-page::-webkit-scrollbar{display:none !important}
+  .stage-head{
+    position:sticky !important;
+    z-index:8 !important;
+    top:0 !important;
+    width:100% !important;
+    background:#fff !important;
+  }
+  .stage-list{width:100% !important;min-width:0 !important}
+  .stage-list>.card{width:100% !important;min-width:0 !important}
+}
+
+
+/* ============================================================
+   v49 — estimate / booking / status / search UX cleanup
+   ============================================================ */
+.booking-actions{grid-template-columns:1fr !important}
+.booking-dates input:disabled{background:#f5f6f7 !important;color:#8d9299 !important;cursor:not-allowed}
+
+/* Source is metadata, not a second status badge. */
+.card-subline{gap:7px !important}
+.card-subline:empty{display:none !important}
+
+/* Event detail: no duplicate title and no stage pill beside urgency. */
+.event-hero-meta{display:flex;justify-content:flex-end;align-items:center;min-height:0;margin-bottom:8px}
+.event-hero-meta[hidden]{display:none !important}
+.event-hero-meta .priority-badge{min-height:30px;padding:0 9px;border-radius:9px;font-size:10px}
+
+/* Search uses information, not fake photos/avatars. */
+.search-result{grid-template-columns:minmax(0,1fr) 18px !important;gap:12px !important;padding:10px 8px !important;min-height:56px !important}
+.search-result .avatar,.search-product-avatar{display:none !important}
+.search-result-copy{min-width:0}
+.search-result strong{font-size:13px !important}
+.search-result span{font-size:10px !important;line-height:1.35}
+
+/* Until real catalog photos are connected, do not show a decorative fake image block. */
+.product-visual{display:none !important}
+
+/* New estimate item editor states. */
+.estimate-editor-head{display:grid;gap:3px}
+.estimate-editor-head .helper{font-size:10px;color:#92969c}
+#deleteEstimateItem[hidden]{display:none !important}
+#estimateEditOverlay .form label.toggle-line{display:flex !important;align-items:center !important;gap:9px !important;padding:7px 0 !important;color:#5f646a !important;font-size:11px !important}
+#estimateEditOverlay .form label.toggle-line input{width:17px !important;height:17px !important;flex:0 0 auto !important}
+
+
+
+/* ============================================================
+   v50 — UI cleanup: quiet metadata, modern rental + calendar
+   ============================================================ */
+#swipeHint{display:none !important}
+#eventsPage .stage-switcher{padding-bottom:7px !important}
+.page-title p:empty,.page-title p[hidden]{display:none !important}
+.event-note[hidden],.event-finance[hidden]{display:none !important}
+
+/* Search: one quiet surface; focus is communicated by the native blinking caret only. */
+.search-command-v43,
+.search-command-v43:focus-within{
+  border:0 !important;
+  background:#f4f5f6 !important;
+  box-shadow:none !important;
+}
+.search-command-v43{padding:0 12px !important}
+.search-command-v43 input{caret-color:#25282d !important}
+.search-command-v43 input:focus{outline:0 !important;box-shadow:none !important}
+
+/* Event cards: metadata appears only when it exists, with one consistent icon language. */
+.card .comment{min-height:0 !important;padding-top:7px !important;color:#7e838a !important;font-size:12px !important;line-height:1.45 !important;font-weight:450 !important}
+.card .comment svg{width:17px !important;height:17px !important;color:#8b9097 !important;stroke-width:1.45 !important}
+.card-footer{min-height:39px !important;gap:13px !important;margin-top:6px !important;padding-top:9px !important}
+.footer-item{gap:6px !important;color:#777d84 !important;font-size:12px !important;font-weight:550 !important}
+.footer-item svg{width:17px !important;height:17px !important;color:#858b92 !important;stroke-width:1.55 !important}
+.footer-money{color:#62686f !important}
+.bell svg{stroke-width:1.5 !important}
+
+/* Detail: remove artificial empty rows and make comment secondary, not a card inside a card. */
+#eventPage .page-title{margin-bottom:10px !important}
+#eventPage .event-hero{padding:9px 14px 14px !important}
+#eventPage .event-hero.has-priority{padding-top:11px !important}
+.event-hero-meta{margin:0 0 5px !important}
+.event-note{
+  margin-top:10px !important;
+  padding:10px 0 0 !important;
+  border:0 !important;
+  border-top:1px solid #eff0f2 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+}
+.event-note-label{gap:6px !important;color:#9499a0 !important;font-size:9px !important;font-weight:650 !important;letter-spacing:.07em !important}
+.event-note-label svg{width:14px !important;height:14px !important;color:#969ba2 !important}
+.event-note p{margin-top:6px !important;color:#626870 !important;font-size:12.5px !important;line-height:1.5 !important;font-weight:450 !important}
+
+/* Rental overview borrows the clean search-result language instead of old bordered cards. */
+.date-selector{margin-bottom:10px !important}
+.rental-date-control{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:#f5f6f7}
+.rental-date-control>span{color:#757b82;font-size:10px;font-weight:650}
+.rental-date-control input{height:auto !important;min-width:132px;flex:0 0 auto !important;padding:0 !important;border:0 !important;background:transparent !important;color:#2d3136 !important;font-size:12px !important;font-weight:600 !important;text-align:right;outline:0 !important}
+.rental-search{height:42px !important;border:0 !important;border-radius:12px !important;background:#f5f6f7 !important;box-shadow:none !important;padding:0 12px !important}
+.rental-search input{outline:0 !important}
+.rental-search:focus-within{background:#f2f3f4 !important;box-shadow:none !important}
+.rental-filter{height:29px !important;border:0 !important;border-radius:999px !important;background:#f4f5f6 !important;color:#777d84 !important;padding:0 10px !important}
+.rental-filter.active{background:#25272b !important;color:#fff !important}
+#rentalList.list{gap:2px !important}
+.rental-card{
+  min-height:64px !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto 18px !important;
+  gap:11px !important;
+  align-items:center !important;
+  padding:10px 9px !important;
+  border:0 !important;
+  border-radius:12px !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  text-align:left !important;
+  transition:background 160ms ease,transform 150ms var(--v43-ease) !important;
+}
+.rental-card:hover{background:#f5f6f7 !important}
+.rental-card:active{background:#f0f2f4 !important;transform:scale(.992) !important}
+.rental-card .list-main strong{font-size:13px !important;font-weight:620 !important}
+.rental-card .list-main span{margin-top:3px !important;color:#969ba2 !important;font-size:10px !important}
+.rental-row-side{display:grid;gap:2px;text-align:right;white-space:nowrap}
+.rental-row-side strong{font-size:10.5px;font-weight:650}
+.rental-row-side span{color:#9a9fa5;font-size:9px;font-weight:500}
+.rental-row-side.available strong{color:#2d8060}
+.rental-row-side.unavailable strong{color:#b95c57}
+.rental-card .chev{color:#a1a6ac !important}
+.rental-empty{border:0 !important;background:#f7f8f9 !important}
+
+/* Rental detail: the label is primary; the value is quieter. No framed mini-dashboard. */
+.product-hero{padding:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important}
+.product-heading{padding:1px 1px 2px}
+.product-kicker{display:block;margin-bottom:5px;color:#8f949b;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.product-hero h3{margin:0 !important;color:#272a2f !important;font-size:18px !important;font-weight:650 !important;letter-spacing:-.02em}
+.product-hero p{margin:6px 0 0 !important;color:#8b9097 !important;font-size:11.5px !important;line-height:1.5 !important}
+.product-info{display:grid !important;margin-top:15px !important;border-top:1px solid #eff0f2 !important}
+.product-info-row{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #eff0f2}
+.product-info-row strong{color:#34383d;font-size:12.5px;font-weight:620}
+.product-info-row span{max-width:62%;color:#858a91;font-size:11.5px;font-weight:500;text-align:right;line-height:1.35}
+.product-estimate-target{margin-top:16px;padding-top:13px;border-top:1px solid #eff0f2}
+.product-estimate-target-copy{display:grid;gap:3px;margin-bottom:8px}
+.product-estimate-target-copy strong{color:#34383d;font-size:12.5px;font-weight:620}
+.product-estimate-target-copy span{color:#9499a0;font-size:10px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.product-estimate-target select{width:100%;height:42px;padding:0 34px 0 11px;border:0;border-radius:10px;background:#f4f5f6;color:#34383d;font-size:11.5px;font-weight:560;outline:0}
+.primary-wide{height:44px !important;margin-top:9px !important;border-radius:11px !important;font-size:12px !important;font-weight:620 !important}
+.primary-wide:disabled{opacity:.45;cursor:not-allowed}
+
+/* Calendar: no 2010 grid chrome — calm toolbar, floating day cells, borderless event rows. */
+.calendar{padding-top:10px !important}
+.calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px}
+.calendar-month-control{position:relative;min-width:0;height:38px;display:inline-flex;align-items:center;gap:5px;padding:0 10px;border:0;border-radius:10px;background:#f4f5f6;cursor:pointer}
+.calendar-month-control strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#2c3035;font-size:13px;font-weight:650;letter-spacing:-.015em}
+.calendar-month-control svg{width:14px;height:14px;color:#8a8f96;flex:0 0 auto}
+.calendar-month-control input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.calendar-toolbar-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.calendar-today,.calendar-arrow{height:34px;border:0;border-radius:10px;background:#f4f5f6;color:#656b72;font-size:10px;font-weight:600}
+.calendar-today{padding:0 10px}
+.calendar-arrow{width:34px;display:grid;place-items:center;padding:0}
+.calendar-arrow svg{width:16px;height:16px}
+.calendar-today:hover,.calendar-arrow:hover{background:#eef0f2}
+.calendar-grid{border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;overflow:visible !important}
+.calendar-grid.dynamic{gap:4px !important}
+.calendar-grid.dynamic .weekday{height:24px !important;border:0 !important;background:transparent !important;color:#a1a6ac !important;font-size:8.5px !important;font-weight:650 !important}
+.calendar-grid.dynamic .day{
+  height:42px !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:transparent !important;
+  color:#4e545b !important;
+  font-size:11px !important;
+  font-weight:560 !important;
+  transition:background 150ms ease,color 150ms ease,transform 150ms ease !important;
+}
+.calendar-grid.dynamic .day:hover{background:#f4f5f6 !important}
+.calendar-grid.dynamic .day:active{transform:scale(.95)}
+.calendar-grid.dynamic .day.outside{background:transparent !important;color:#c7cbd0 !important}
+.calendar-grid.dynamic .day.today{box-shadow:inset 0 0 0 1px #dfe2e6 !important;font-weight:650 !important}
+.calendar-grid.dynamic .day.selected{background:#25272b !important;color:#fff !important;box-shadow:none !important}
+.day-dots{bottom:4px !important;gap:2px !important}
+.day-dots i{width:3.5px !important;height:3.5px !important}
+.calendar-selected{margin-top:14px !important;padding-top:12px !important;border-top:1px solid #eff0f2}
+.calendar-selected-head{margin-bottom:7px !important}
+.calendar-selected-head strong{font-size:13px !important;font-weight:650 !important}
+.calendar-selected-head span{color:#979ca3 !important;font-size:9.5px !important}
+.calendar-event-list{gap:2px !important}
+.calendar-event-row{min-height:52px !important;grid-template-columns:3px minmax(0,1fr) 18px !important;gap:10px !important;padding:8px 7px !important;border:0 !important;border-radius:11px !important;background:transparent !important;transition:background 160ms ease,transform 150ms ease !important}
+.calendar-event-row:hover{background:#f5f6f7 !important}
+.calendar-event-row:active{background:#f0f2f4 !important;transform:scale(.992) !important}
+.calendar-event-row .bar{width:3px !important;height:30px !important;border-radius:3px !important}
+.calendar-event-row strong{font-size:12.5px !important;font-weight:620 !important}
+.calendar-event-row span{margin-top:2px !important;color:#969ba2 !important;font-size:9.5px !important}
+.calendar-event-row>svg{color:#a1a6ac !important}
+.calendar-empty{padding:14px 10px !important;border:0 !important;border-radius:11px !important;background:#f7f8f9 !important;color:#989da4 !important}
+
+@media(max-width:600px){
+  .calendar-toolbar{align-items:center}
+  .calendar-month-control{max-width:160px}
+  .calendar-today{display:none}
+  .rental-card{grid-template-columns:minmax(0,1fr) auto 18px !important;gap:8px !important}
+  .rental-row-side strong{font-size:9.5px}
+  .rental-row-side span{font-size:8.5px}
+  .product-info-row span{max-width:58%}
+}
+@media(max-width:380px){
+  .rental-row-side span{display:none}
+}
+
+
+
+/* ============================================================
+   v51 — status sync, estimate unification, restrained system UX
+   ============================================================ */
+
+/* Two permanent primary views become one centered segmented control. */
+#eventsPage>.toolbar{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:3px !important;
+  margin:12px 16px 10px !important;
+  padding:3px !important;
+  border-radius:13px !important;
+  background:#f3f4f5 !important;
+}
+#eventsPage>.toolbar .tool{
+  width:100% !important;
+  height:38px !important;
+  padding:0 12px !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#747a81 !important;
+  font-size:11.5px !important;
+  font-weight:620 !important;
+}
+#eventsPage>.toolbar .tool.active{
+  background:#25272b !important;
+  color:#fff !important;
+  box-shadow:0 2px 7px rgba(24,27,32,.12) !important;
+}
+
+/* Event detail starts immediately with useful information: no orphan divider/title slot. */
+#eventPage .event-fields{margin-top:0 !important;border-top:0 !important}
+#eventPage .event-hero-meta:not([hidden]) + .event-fields{margin-top:5px !important}
+#eventPage .event-quick-actions{grid-template-columns:1fr 1fr !important;gap:8px !important}
+#eventPage .event-quick{
+  height:46px !important;
+  min-height:46px !important;
+  color:#25282d !important;
+  font-size:11px !important;
+  line-height:1.1 !important;
+}
+#eventPage .event-quick.primary{color:#fff !important}
+#eventPage .event-quick>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#eventPage .event-note-label svg,
+.card .comment svg{stroke-linejoin:round !important;stroke-linecap:round !important}
+
+/* Temporary feedback is visible only while a stage transition completes. */
+.stage-change-feedback{
+  display:none;
+  align-items:center;
+  gap:7px;
+  margin:0 0 8px;
+  padding:7px 9px;
+  border-radius:9px;
+  background:#f4f5f6;
+  color:#626870;
+  font-size:10px;
+  font-weight:620;
+}
+.stage-change-feedback::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--feedback-stage,#4385dd);flex:0 0 auto}
+.stage-change-feedback.show{display:flex;animation:stageFeedbackIn 230ms cubic-bezier(.2,.8,.2,1) both}
+#eventHeroCard.stage-changed{animation:eventStagePulse 520ms cubic-bezier(.16,1,.3,1) both}
+@keyframes stageFeedbackIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes eventStagePulse{0%{transform:scale(.995)}45%{transform:scale(1.003)}100%{transform:scale(1)}}
+
+/* Calendar cells retain air, but a very light outline makes the month readable. */
+.calendar-grid.dynamic{gap:5px !important}
+.calendar-grid.dynamic .day{
+  background:#fff !important;
+  box-shadow:inset 0 0 0 1px #eceef1 !important;
+}
+.calendar-grid.dynamic .day:hover{background:#f7f8f9 !important;box-shadow:inset 0 0 0 1px #e3e6e9 !important}
+.calendar-grid.dynamic .day.outside{background:#fbfbfc !important;color:#c2c6cc !important;box-shadow:inset 0 0 0 1px #f1f2f4 !important}
+.calendar-grid.dynamic .day.today{box-shadow:inset 0 0 0 1.5px #cfd3d8 !important}
+.calendar-grid.dynamic .day.selected{background:#25272b !important;color:#fff !important;box-shadow:inset 0 0 0 1px #25272b !important}
+
+/* Estimate is a list, not a pile of dashboard cards. */
+#estimatePage .estimate-toolbar{justify-content:flex-end !important;margin:0 0 8px !important}
+#estimatePage .add-more{height:34px !important;border:0 !important;background:#f3f4f5 !important;box-shadow:none !important;color:#4d535a !important}
+#estimatePage .estimate-list{gap:2px !important;margin-top:8px !important}
+#estimatePage .estimate-item{
+  padding:10px 8px !important;
+  border:0 !important;
+  border-radius:12px !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  transition:background 160ms ease,transform 150ms ease !important;
+}
+#estimatePage .estimate-item:hover{background:#f5f6f7 !important}
+#estimatePage .estimate-item:active{background:#f0f2f4 !important;transform:scale(.993) !important}
+#estimatePage .estimate-item+.estimate-item{border-top:0 !important}
+#estimatePage .estimate-item .item-main>strong{font-size:13px !important;font-weight:630 !important}
+#estimatePage .estimate-item .item-main>span{color:#959aa1 !important;font-size:9.5px !important}
+#estimatePage .qty-chip{border:0 !important;background:#f1f2f3 !important;color:#646a71 !important}
+#estimatePage .booking-line-meta{display:none !important}
+.estimate-economy-line{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px 11px;
+  margin-top:7px;
+  color:#92979e;
+  font-size:9.5px;
+  font-weight:520;
+}
+.estimate-economy-line span{display:inline-flex;align-items:baseline;gap:4px}
+.estimate-economy-line strong{color:#50565d;font-size:10px;font-weight:650}
+.estimate-economy-line .profit strong{color:#24865d}
+.estimate-economy-line.negative .profit strong{color:#b84e49}
+
+/* Booking stays explicit, but loses instructional clutter and heavy card chrome. */
+.booking-card{padding:12px !important;border:0 !important;border-radius:14px !important;background:#f6f7f8 !important;box-shadow:none !important}
+.booking-head{align-items:center !important;margin-bottom:10px !important}
+.booking-head strong{font-size:12.5px !important;font-weight:650 !important}
+.booking-dates label{color:#777d84 !important;font-size:9.5px !important}
+.booking-dates input{
+  height:40px !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:#fff !important;
+  color:#25282d !important;
+  font-size:11.5px !important;
+  font-weight:620 !important;
+  box-shadow:inset 0 0 0 1px #e6e8eb !important;
+}
+.booking-dates input:disabled{background:#f0f1f2 !important;color:#25282d !important;opacity:1 !important}
+.booking-summary{padding:8px 9px !important;background:#fff !important;color:#70767d !important}
+.booking-summary.ok{background:#eef7f2 !important;color:#287657 !important}
+.booking-summary.warn{background:#fff3ec !important;color:#9d5d2c !important}
+.booking-actions button{height:40px !important;border-radius:10px !important}
+
+/* Totals become a single calm surface. */
+.estimate-dock{background:linear-gradient(to bottom,rgba(255,255,255,.8),#fff 16px) !important}
+.estimate-dock .estimate-summary{border:0 !important;border-radius:13px !important;background:#f5f6f7 !important;box-shadow:none !important}
+.estimate-dock .client-actions button{height:41px !important;border:0 !important;border-radius:11px !important}
+
+/* Add-to-estimate catalog mirrors the Rental list. */
+#addItemOverlay .sheet{padding-bottom:18px}
+#addItemOverlay .catalog-list{display:grid !important;gap:2px !important;margin:0 -5px}
+#addItemOverlay .catalog-row{
+  width:100% !important;
+  min-height:58px !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto 18px !important;
+  gap:10px !important;
+  align-items:center !important;
+  padding:9px 8px !important;
+  border:0 !important;
+  border-radius:11px !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:inherit !important;
+  text-align:left !important;
+  transition:background 160ms ease,transform 150ms ease !important;
+}
+#addItemOverlay .catalog-row:hover{background:#f5f6f7 !important}
+#addItemOverlay .catalog-row:active{background:#f0f2f4 !important;transform:scale(.992) !important}
+#addItemOverlay .catalog-row:disabled{opacity:.45;cursor:not-allowed}
+#addItemOverlay .catalog-row>div:first-child{display:grid;gap:3px;min-width:0}
+#addItemOverlay .catalog-row>div:first-child strong{font-size:12.5px !important;font-weight:620 !important}
+#addItemOverlay .catalog-row>div:first-child span{color:#979ca3 !important;font-size:9.5px !important}
+.catalog-row-side{display:grid !important;gap:2px !important;text-align:right !important;white-space:nowrap}
+.catalog-row-side strong{font-size:9.5px !important;font-weight:650 !important;color:#2d8060}
+.catalog-row-side span{font-size:8.5px !important;color:#9a9fa5 !important}
+.catalog-row.unavailable .catalog-row-side strong{color:#b95c57 !important}
+#addItemOverlay .catalog-row .chev{width:16px;height:16px;color:#a1a6ac}
+
+/* Own item / extra expense use the same clean row rhythm. */
+.estimate-special-list{display:grid;gap:2px;margin:8px -5px 0;padding-top:7px;border-top:1px solid #eff0f2}
+.estimate-special-list button{
+  min-height:56px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 18px;
+  gap:10px;
+  align-items:center;
+  padding:8px;
+  border:0;
+  border-radius:11px;
+  background:transparent;
+  text-align:left;
+  transition:background 160ms ease,transform 150ms ease;
+}
+.estimate-special-list button:hover{background:#f5f6f7}
+.estimate-special-list button:active{background:#f0f2f4;transform:scale(.992)}
+.estimate-special-list button>span{display:grid;gap:3px}
+.estimate-special-list button strong{font-size:12.5px;font-weight:620}
+.estimate-special-list button small{color:#989da4;font-size:9.5px;font-weight:500}
+.estimate-special-list button svg{width:16px;height:16px;color:#a1a6ac}
+
+/* Compact system-like confirmation: clear hierarchy, no oversized sheet typography. */
+.system-confirm-overlay{z-index:180 !important;align-items:flex-end !important;justify-content:center !important;padding:0 !important;background:rgba(17,18,20,.22) !important;backdrop-filter:blur(7px) !important;-webkit-backdrop-filter:blur(7px) !important}
+.system-confirm-sheet{
+  width:min(100%,430px) !important;
+  padding:18px 16px calc(14px + env(safe-area-inset-bottom)) !important;
+  border-radius:20px 20px 0 0 !important;
+  background:rgba(250,250,251,.98) !important;
+  box-shadow:0 -18px 44px rgba(18,20,24,.16) !important;
+  text-align:center !important;
+}
+.system-confirm-sheet .grab{display:none !important}
+.system-confirm-icon{width:34px;height:34px;margin:0 auto 10px;display:grid;place-items:center;border-radius:50%;background:#eceef1;color:#4f555c}
+.system-confirm-icon svg{width:17px;height:17px}
+.system-confirm-copy strong{display:block;color:#25282d;font-size:14px;font-weight:680;letter-spacing:-.015em}
+.system-confirm-copy p{max-width:330px;margin:6px auto 0;color:#777d84;font-size:10.5px;line-height:1.45;font-weight:500}
+.system-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.system-confirm-actions button{height:42px;border:0;border-radius:11px;background:#e9ebee;color:#33383e;font-size:11.5px;font-weight:650}
+.system-confirm-actions button.primary{background:#25272b;color:#fff}
+.system-confirm-actions button:active{transform:scale(.98)}
+
+@media(max-width:380px){
+  #eventPage .event-quick{font-size:10px !important}
+  .estimate-economy-line{gap:5px 8px}
+  .calendar-grid.dynamic{gap:4px !important}
+}
+
+
+
+/* ============================================================
+   v52 — system polish / direct status transitions / calendar v2
+   ============================================================ */
+
+/* The status confirmation from v51 is retired. Status changes are immediate. */
+#advanceStageOverlay{display:none !important}
+#stageChangeFeedback{display:none !important}
+
+/* A compact system response rises from the bottom after the status has already changed. */
+.stage-status-toast{
+  position:absolute;
+  z-index:175;
+  left:50%;
+  bottom:92px;
+  width:min(calc(100% - 28px),360px);
+  min-height:54px;
+  display:grid;
+  grid-template-columns:10px minmax(0,1fr) 18px;
+  gap:11px;
+  align-items:center;
+  padding:10px 12px;
+  border:1px solid rgba(207,211,216,.9);
+  border-radius:15px;
+  background:rgba(250,250,251,.96);
+  box-shadow:0 14px 34px rgba(26,30,36,.15);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  opacity:0;
+  pointer-events:none;
+  transform:translate(-50%,22px) scale(.985);
+  transition:opacity 180ms ease,transform 330ms cubic-bezier(.16,1,.3,1);
+}
+.stage-status-toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.stage-status-dot{width:9px;height:9px;border-radius:50%;background:#4385dd}
+.stage-status-copy{display:grid;gap:2px;min-width:0}
+.stage-status-copy small{color:#8c9198;font-size:8.5px;font-weight:650;letter-spacing:.035em;text-transform:uppercase}
+.stage-status-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#25282d;font-size:12px;font-weight:680;letter-spacing:-.01em}
+.stage-status-toast>svg{width:16px;height:16px;color:#969ba2}
+@keyframes statusAdvancePulse{0%{transform:scale(1)}45%{transform:scale(.975)}100%{transform:scale(1)}}
+#advanceEventBtn.status-advance-pulse{animation:statusAdvancePulse 500ms cubic-bezier(.16,1,.3,1) both}
+
+/* Make the shell feel like one product rather than a logo plus disconnected screens. */
+.topbar{height:60px;padding:0 14px;background:#fff;border-bottom:1px solid #eceef1}
+.site-logo-mark{width:38px;height:38px}
+.site-logo-name{font-size:12px;letter-spacing:.09em}
+.site-logo-sub{font-size:6px;letter-spacing:.12em;color:#92969c}
+#searchBtn{width:34px;height:34px}
+
+/* Event header: the title is the only title. Location lives in the information rows below. */
+#eventPage .page-title{align-items:center;margin-bottom:9px !important}
+#eventPage .page-title h2{font-size:17px;font-weight:650;line-height:1.18;letter-spacing:-.025em}
+#eventPage .page-title p{margin-top:3px;color:#8e939a;font-size:9.5px;font-weight:520}
+#eventPage .page-title p[hidden]{display:none !important}
+#eventPage .event-hero{padding:4px 14px 13px !important}
+#eventPage .event-hero-meta{margin:7px 0 3px !important}
+#eventPage .event-hero-meta[hidden]{display:none !important;margin:0 !important}
+#eventPage .event-fields{border-top:0 !important;margin-top:0 !important}
+#eventPage .field:first-child{border-top:0 !important}
+#eventPage .event-contact-call,
+#eventPage .event-contact-copy{color:#25282d !important}
+#eventPage .event-contact-call:hover{color:#111317 !important}
+#eventPage .event-contact-call.disabled{color:#25282d !important;opacity:.58}
+
+/* Both main event actions have exactly the same geometry. */
+#eventPage .event-quick-actions{grid-template-columns:1fr 1fr !important;gap:8px !important}
+#eventPage .event-quick{
+  width:100% !important;
+  height:44px !important;
+  min-height:44px !important;
+  max-height:44px !important;
+  padding:0 10px !important;
+  overflow:hidden !important;
+  color:#202328 !important;
+  font-size:10.5px !important;
+  line-height:1 !important;
+  font-weight:650 !important;
+  white-space:nowrap !important;
+}
+#eventPage .event-quick:not(.primary) svg{color:#202328 !important}
+#eventPage .event-quick.primary{color:#fff !important}
+#eventPage .event-quick>span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap !important}
+#eventPage .event-quick>svg{flex:0 0 auto}
+
+/* Calendar v2: one calm monthly surface with internal rhythm, not 42 separate tiles. */
+.calendar-toolbar{margin-bottom:10px !important}
+.calendar-month-control{height:36px !important;background:transparent !important;padding:0 2px !important;border-radius:8px !important}
+.calendar-month-control strong{font-size:13px !important;font-weight:680 !important;color:#25282d !important}
+.calendar-toolbar-actions{gap:2px !important}
+.calendar-arrow{width:32px !important;height:32px !important;background:transparent !important;border-radius:9px !important}
+.calendar-arrow:hover{background:#f3f4f5 !important}
+.calendar-today{height:32px !important;background:#f4f5f6 !important}
+.calendar-grid.dynamic{
+  display:grid !important;
+  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+  gap:0 !important;
+  padding:7px 7px 8px !important;
+  border:1px solid #e5e8eb !important;
+  border-radius:16px !important;
+  background:#fafbfc !important;
+  overflow:hidden !important;
+}
+.calendar-grid.dynamic .weekday{
+  height:25px !important;
+  display:grid !important;
+  place-items:center !important;
+  border:0 !important;
+  background:transparent !important;
+  color:#9da2a9 !important;
+  font-size:8px !important;
+  font-weight:680 !important;
+}
+.calendar-grid.dynamic .day{
+  position:relative !important;
+  height:45px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  border:0 !important;
+  border-top:1px solid #edf0f2 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#34393f !important;
+  font-size:11px !important;
+  font-weight:580 !important;
+}
+.calendar-grid.dynamic .day:not(:nth-of-type(7n+1)){border-left:1px solid #edf0f2 !important}
+.calendar-grid.dynamic .day:hover{background:#f4f6f7 !important;box-shadow:none !important}
+.calendar-grid.dynamic .day.outside{background:transparent !important;color:#bcc1c7 !important}
+.calendar-grid.dynamic .day-number{
+  width:29px;
+  height:29px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  position:relative;
+  z-index:1;
+}
+.calendar-grid.dynamic .day.today{box-shadow:none !important}
+.calendar-grid.dynamic .day.today .day-number{box-shadow:inset 0 0 0 1.2px #c8cdd3;background:#fff}
+.calendar-grid.dynamic .day.selected{background:#f4f6f7 !important;color:#25282d !important;box-shadow:none !important}
+.calendar-grid.dynamic .day.selected .day-number{background:#25272b;color:#fff;box-shadow:none !important;font-weight:680}
+.calendar-grid.dynamic .day.outside.selected .day-number{color:#fff}
+.calendar-grid.dynamic .day:active .day-number{transform:scale(.93)}
+.day-dots{position:absolute !important;left:50% !important;bottom:3px !important;transform:translateX(-50%);display:flex !important;gap:2px !important;z-index:2}
+.day-dots i{width:3px !important;height:3px !important}
+.calendar-selected{margin-top:12px !important;padding-top:11px !important}
+.calendar-event-row strong{color:#25282d !important;font-weight:650 !important}
+.calendar-event-row span{color:#4e545b !important;font-weight:520 !important}
+.calendar-event-row>svg{color:#92979e !important}
+
+@media(max-width:600px){
+  :root{--crm-header-h:68px}
+  .topbar{height:var(--crm-header-h) !important;min-height:var(--crm-header-h) !important;max-height:var(--crm-header-h) !important;padding:7px 14px !important}
+  .site-logo-mark{width:38px !important;height:38px !important}
+  .site-logo-name{font-size:11.5px !important}
+  .site-logo-sub{font-size:5.8px !important}
+  .stage-status-toast{bottom:calc(var(--crm-bottom-h) + 12px)}
+  .calendar-grid.dynamic{padding:6px 5px 7px !important}
+  .calendar-grid.dynamic .day{height:43px !important}
+  .calendar-grid.dynamic .day-number{width:28px;height:28px}
+}
+
+/* ============================================================
+   v53 — semantic cards + unified icon language + date-ribbon calendar
+   ============================================================ */
+
+/* One icon language across an event preview card. */
+#eventsPage .card .row>svg,
+#eventsPage .card .comment>svg,
+#eventsPage .card .footer-item>svg,
+#eventsPage .card .advance>svg,
+#eventsPage .card .bell>svg{
+  width:17px !important;
+  height:17px !important;
+  color:#727980 !important;
+  stroke:currentColor !important;
+  stroke-width:1.6 !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+}
+#eventsPage .card .bell{color:#727980 !important}
+#eventsPage .card .advance{color:#626970 !important}
+#eventsPage .card .advance>svg{color:#727980 !important}
+
+/* Replace arbitrary initials with a semantic event glyph. */
+#eventsPage .event-avatar{
+  width:34px !important;
+  height:34px !important;
+  display:grid !important;
+  place-items:center !important;
+  border:0 !important;
+  border-radius:11px !important;
+  background:#f1f2f4 !important;
+  color:#626970 !important;
+}
+#eventsPage .event-avatar svg{width:18px !important;height:18px !important;stroke-width:1.55 !important}
+#eventsPage .event-avatar-lead{background:#edf4ff !important;color:#4a73aa !important}
+#eventsPage .event-avatar-wedding{background:#f8f1f4 !important;color:#865e6c !important}
+#eventsPage .event-avatar-birthday{background:#fff5e8 !important;color:#956d36 !important}
+#eventsPage .event-avatar-business{background:#f0f2f6 !important;color:#59677d !important}
+#eventsPage .event-avatar-dinner{background:#f4f1ec !important;color:#746557 !important}
+#eventsPage .event-avatar-photo{background:#f2eff8 !important;color:#6b6088 !important}
+
+/* Header metadata never repeats the venue: venue lives only in its dedicated row. */
+#eventsPage .card-subline{display:flex !important;align-items:center !important;gap:6px !important;min-height:18px !important;margin-top:3px !important}
+#eventsPage .card-subline:empty{display:none !important}
+#eventsPage .card-subline.priority-only{margin-top:5px !important}
+#eventsPage .card-origin{color:#91969d;font-size:10px;font-weight:520}
+#eventsPage .card-subline .priority-badge{margin:0 !important}
+
+/* Event detail: priority is title metadata, not an isolated empty hero row. */
+#eventPage .event-title-copy h2{line-height:1.15 !important}
+#eventPage .event-title-meta-line{display:flex;align-items:center;gap:7px;min-width:0;margin-top:5px}
+#eventPage .event-title-meta-line[hidden]{display:none !important}
+#eventPage .event-title-meta-line p{margin:0 !important;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#eventPage .event-title-meta-line .priority-badge{flex:0 0 auto;min-height:24px !important;height:24px !important;padding:0 8px !important;border-radius:8px !important;font-size:9px !important}
+#eventPage .event-hero{padding-top:10px !important}
+#eventPage .event-hero.has-priority{padding-top:10px !important}
+#eventPage .event-fields{margin-top:0 !important}
+
+/* Calendar: date ribbon + agenda. No square month grid. */
+#calendar .calendar-toolbar{margin-bottom:9px !important}
+#calendar .calendar-month-control{height:40px !important;background:transparent !important;padding:0 2px !important;border-radius:0 !important}
+#calendar .calendar-month-control strong{font-size:17px !important;font-weight:680 !important;letter-spacing:-.025em !important}
+#calendar .calendar-month-control svg{color:#8c9299 !important}
+#calendar .calendar-toolbar-actions{gap:4px !important}
+#calendar .calendar-arrow,#calendar .calendar-today{background:#f3f4f5 !important;border-radius:10px !important}
+#calendar .calendar-date-ribbon{
+  display:flex !important;
+  grid-template-columns:none !important;
+  gap:7px !important;
+  width:100% !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  padding:4px 2px 10px !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  scroll-snap-type:x proximity;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+#calendar .calendar-date-ribbon::-webkit-scrollbar{display:none}
+#calendar .calendar-day-chip{
+  position:relative;
+  flex:0 0 48px;
+  height:66px;
+  display:grid;
+  grid-template-rows:16px 25px 9px;
+  align-items:center;
+  justify-items:center;
+  padding:7px 4px 5px;
+  border:0;
+  border-radius:15px;
+  background:#f5f6f7;
+  color:#4d535a;
+  scroll-snap-align:center;
+  transition:background 160ms ease,color 160ms ease,transform 150ms ease,box-shadow 160ms ease;
+}
+#calendar .calendar-day-chip:hover{background:#eff1f3}
+#calendar .calendar-day-chip:active{transform:scale(.96)}
+#calendar .calendar-chip-weekday{color:#9a9fa6;font-size:8.5px;font-weight:650;text-transform:uppercase;line-height:1}
+#calendar .calendar-day-chip strong{font-size:15px;font-weight:650;line-height:1;color:inherit}
+#calendar .calendar-chip-markers{height:6px;display:flex;align-items:center;justify-content:center;gap:2.5px}
+#calendar .calendar-chip-markers i{width:4px;height:4px;border-radius:50%;display:block}
+#calendar .calendar-day-chip.today{box-shadow:inset 0 0 0 1px #d6dade}
+#calendar .calendar-day-chip.selected{background:#25272b;color:#fff;box-shadow:0 4px 11px rgba(27,30,34,.14)}
+#calendar .calendar-day-chip.selected .calendar-chip-weekday{color:#c8ccd1}
+#calendar .calendar-day-chip.selected .calendar-chip-markers i{box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+#calendar .calendar-selected{margin-top:4px !important;padding-top:11px !important;border-top:1px solid #eff0f2 !important}
+#calendar .calendar-selected-head strong{color:#25282d !important;font-size:14px !important;font-weight:680 !important}
+#calendar .calendar-selected-head span{color:#7d838a !important;font-size:10px !important}
+#calendar .calendar-event-row strong{color:#202328 !important;font-weight:650 !important}
+#calendar .calendar-event-row span{color:#525960 !important;font-weight:520 !important}
+
+@media(max-width:600px){
+  #calendar .calendar-day-chip{flex-basis:46px;height:64px}
+  #calendar .calendar-month-control strong{font-size:16px !important}
+}
+
+/* ============================================================
+   v54 — final polish: semantic event theming, full month calendar,
+   iOS-like create sheet, and clearer rental controls
+   ============================================================ */
+
+/* Semantic event identity: restrained, meaningful and editable. */
+#eventsPage .event-avatar{
+  border:1px solid var(--event-ring,#e4e6e9) !important;
+  background:var(--event-bg,#f3f4f5) !important;
+  color:var(--event-ink,#626970) !important;
+  box-shadow:0 1px 2px rgba(27,31,36,.025) !important;
+}
+#eventsPage .event-avatar svg{color:inherit !important;stroke:currentColor !important}
+#eventsPage .event-theme-wedding{--event-bg:#fbf4f6;--event-ink:#875f6f;--event-ring:#efdfe5}
+#eventsPage .event-theme-birthday{--event-bg:#fff6e9;--event-ink:#8d6836;--event-ring:#f2e2c8}
+#eventsPage .event-theme-business{--event-bg:#f1f3f7;--event-ink:#58677c;--event-ring:#dfe3ea}
+#eventsPage .event-theme-presentation{--event-bg:#f2f1f8;--event-ink:#665f87;--event-ring:#e2dff0}
+#eventsPage .event-theme-photo{--event-bg:#f5f1f8;--event-ink:#71617e;--event-ring:#e8dfed}
+#eventsPage .event-theme-dinner{--event-bg:#f6f3ee;--event-ink:#756453;--event-ring:#e8e1d7}
+#eventsPage .event-theme-lead{--event-bg:#eef4fb;--event-ink:#52749d;--event-ring:#dce8f5}
+#eventsPage .event-theme-event{--event-bg:#f3f4f5;--event-ink:#646a71;--event-ring:#e4e6e9}
+
+/* Full month at a glance without 2010-style boxed cells. */
+#calendar .calendar-grid.dynamic{
+  display:block !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+}
+#calendar .calendar-weekdays-v54{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  padding:0 2px 7px;
+}
+#calendar .calendar-weekdays-v54 span{
+  text-align:center;
+  color:#a2a7ad;
+  font-size:8px;
+  font-weight:680;
+  letter-spacing:.055em;
+}
+#calendar .calendar-weeks-v54{display:grid;gap:0}
+#calendar .calendar-week-row{
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  min-height:47px;
+  align-items:center;
+  padding:3px 0;
+}
+#calendar .calendar-week-row + .calendar-week-row::before{
+  content:"";
+  position:absolute;
+  left:7%;right:7%;top:0;
+  height:1px;
+  background:#f1f2f4;
+}
+#calendar .calendar-month-day,
+#calendar .calendar-day-spacer{
+  width:100%;
+  height:41px;
+  display:grid;
+  grid-template-rows:29px 6px;
+  place-items:center;
+  align-content:center;
+  padding:2px 0;
+}
+#calendar .calendar-month-day{
+  border:0;
+  border-radius:12px;
+  background:transparent;
+  color:#3d4349;
+  transition:background 150ms ease,transform 150ms ease;
+}
+#calendar .calendar-month-day:hover{background:#f6f7f8}
+#calendar .calendar-month-day:active{transform:scale(.95)}
+#calendar .calendar-month-number{
+  width:29px;height:29px;
+  display:grid;place-items:center;
+  border-radius:50%;
+  color:inherit;
+  font-size:11.5px;
+  font-weight:600;
+  transition:background 160ms ease,color 160ms ease,box-shadow 160ms ease;
+}
+#calendar .calendar-month-day.today .calendar-month-number{
+  box-shadow:inset 0 0 0 1.2px #cdd2d7;
+  background:#fff;
+  font-weight:680;
+}
+#calendar .calendar-month-day.selected{background:transparent}
+#calendar .calendar-month-day.selected .calendar-month-number{
+  background:#25272b;
+  color:#fff;
+  box-shadow:0 3px 8px rgba(24,27,31,.14);
+  font-weight:680;
+}
+#calendar .calendar-month-markers{height:5px;display:flex;align-items:center;justify-content:center;gap:2px}
+#calendar .calendar-month-markers i{display:block;width:7px;height:2px;border-radius:3px}
+#calendar .calendar-selected{margin-top:10px !important;padding-top:12px !important;border-top:1px solid #eef0f2 !important}
+
+/* New event: iOS-style sheet motion and cleaner grouped fields. */
+#newEventOverlay{
+  z-index:190 !important;
+  background:rgba(17,18,20,0) !important;
+  backdrop-filter:blur(0) !important;
+  -webkit-backdrop-filter:blur(0) !important;
+  transition:background 260ms ease,backdrop-filter 320ms ease,-webkit-backdrop-filter 320ms ease,opacity 190ms ease,visibility 0s linear 360ms !important;
+}
+#newEventOverlay.open{
+  background:rgba(17,18,20,.22) !important;
+  backdrop-filter:blur(7px) !important;
+  -webkit-backdrop-filter:blur(7px) !important;
+}
+#newEventOverlay .new-event-sheet{
+  max-height:90% !important;
+  padding:8px 14px calc(16px + env(safe-area-inset-bottom)) !important;
+  border:0 !important;
+  border-radius:24px 24px 0 0 !important;
+  background:#fbfbfc !important;
+  box-shadow:0 -20px 54px rgba(19,22,27,.17) !important;
+  transform:translate3d(0,104%,0) scale(.992) !important;
+  opacity:1 !important;
+  transition:transform 470ms cubic-bezier(.32,.72,0,1) !important;
+}
+#newEventOverlay.open .new-event-sheet{transform:translate3d(0,0,0) scale(1) !important}
+#newEventOverlay .grab{width:36px;height:5px;margin-bottom:8px;background:#d6d8dc}
+#newEventOverlay .sheet-head{min-height:46px;margin-bottom:8px;padding:0 2px}
+#newEventOverlay .sheet-head strong{font-size:17px;font-weight:700;letter-spacing:-.025em}
+#newEventOverlay .close{border:0;background:#edeff1;border-radius:50%;width:30px;height:30px}
+#newEventOverlay .close svg{width:14px;height:14px}
+#newEventOverlay .form{gap:9px}
+#newEventOverlay .form label{gap:6px;color:#7a8087 !important;font-size:9.5px !important;font-weight:650 !important}
+#newEventOverlay .form input,
+#newEventOverlay .form textarea,
+#newEventOverlay .form select{
+  min-height:44px;
+  padding:10px 12px !important;
+  border:0 !important;
+  border-radius:12px !important;
+  background:#f0f1f3 !important;
+  box-shadow:none !important;
+  color:#25282d !important;
+  font-size:13px !important;
+  font-weight:560 !important;
+}
+#newEventOverlay .form input:focus,
+#newEventOverlay .form textarea:focus,
+#newEventOverlay .form select:focus{background:#eceef0 !important;outline:0 !important;box-shadow:none !important}
+#newEventOverlay .form textarea{min-height:74px !important;resize:none}
+#newEventOverlay .new-event-options{display:grid;grid-template-columns:1fr 1.35fr;gap:8px}
+#newEventOverlay #createEvent{height:46px;margin-top:3px;border-radius:13px;font-size:12px;font-weight:680}
+#newEventOverlay.open .form>*{animation:v54FieldIn 410ms cubic-bezier(.16,1,.3,1) both}
+#newEventOverlay.open .form>*:nth-child(2){animation-delay:25ms}
+#newEventOverlay.open .form>*:nth-child(3){animation-delay:45ms}
+#newEventOverlay.open .form>*:nth-child(4){animation-delay:65ms}
+#newEventOverlay.open .form>*:nth-child(5){animation-delay:85ms}
+#newEventOverlay.open .form>*:nth-child(6){animation-delay:105ms}
+@keyframes v54FieldIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Rental controls are three distinct layers: date, search, category navigation. */
+#rentalPage .date-selector{margin:2px 0 12px !important}
+#rentalPage .rental-date-control{
+  min-height:50px;
+  display:grid !important;
+  grid-template-columns:32px minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:9px !important;
+  padding:7px 10px !important;
+  border:1px solid #e3e6e9 !important;
+  border-radius:14px !important;
+  background:#fff !important;
+  box-shadow:0 2px 7px rgba(24,28,34,.035) !important;
+}
+#rentalPage .rental-date-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:#f2f3f5;color:#626970}
+#rentalPage .rental-date-icon svg{width:16px;height:16px}
+#rentalPage .rental-date-label{color:#565d64 !important;font-size:11px !important;font-weight:650 !important}
+#rentalPage .rental-date-control input{
+  min-width:130px !important;
+  color:#25282d !important;
+  font-size:11.5px !important;
+  font-weight:650 !important;
+}
+#rentalPage .rental-search{height:43px !important;background:#eceef0 !important;border-radius:13px !important}
+#rentalPage .rental-search:focus-within{background:#e8eaed !important}
+#rentalPage .rental-filters{
+  gap:16px !important;
+  padding:1px 2px 7px !important;
+  border-bottom:1px solid #eef0f2;
+}
+#rentalPage .rental-filter{
+  position:relative;
+  height:30px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:#92979e !important;
+  font-size:10px !important;
+  font-weight:620 !important;
+  white-space:nowrap;
+}
+#rentalPage .rental-filter.active{background:transparent !important;color:#25282d !important}
+#rentalPage .rental-filter.active::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:-8px;
+  height:2px;
+  border-radius:2px;
+  background:#25272b;
+}
+
+@media(max-width:380px){
+  #newEventOverlay .new-event-options{grid-template-columns:1fr}
+  #rentalPage .rental-date-control{grid-template-columns:30px minmax(0,1fr) auto !important}
+  #rentalPage .rental-date-control input{min-width:118px !important;font-size:10.5px !important}
+  #calendar .calendar-week-row{min-height:44px}
+  #calendar .calendar-month-day,#calendar .calendar-day-spacer{height:38px}
+}
+
+/* v55 — narrow visual refinement after v54 review */
+
+/* Main tabs: inactive state remains black. */
+#eventsPage>.toolbar .tool{color:#25282d !important}
+#eventsPage>.toolbar .tool.active{color:#fff !important}
+
+/* Preview title: no underline; priority sits beside the title. */
+#eventsPage .card-name{min-width:0}
+#eventsPage .card-title-line{display:flex;align-items:center;gap:8px;min-width:0}
+#eventsPage .card-title-line>strong{
+  flex:1;min-width:0;display:block !important;
+  padding-bottom:0 !important;border-bottom:0 !important;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+#eventsPage .card-title-line>.priority-badge{flex:0 0 auto;margin:0 !important}
+#eventsPage .card-subline{min-height:0 !important;margin-top:4px !important}
+
+/* Detail header: title + priority in one row, no received timestamp. */
+#eventPage .event-title-copy{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  column-gap:9px !important
+}
+#eventPage .event-title-copy>h2{grid-column:1;min-width:0;margin:0 !important}
+#eventPage .event-title-meta-line{
+  grid-column:2 !important;margin:0 !important;
+  display:flex !important;align-items:center !important
+}
+#eventPage .event-title-meta-line[hidden]{display:none !important}
+#eventPage .event-title-meta-line p{display:none !important}
+
+/* Unified separators and centered contact row. */
+#eventPage .field{
+  min-height:49px !important;
+  align-items:center !important;
+  border-bottom:1px solid #eceef0 !important
+}
+#eventPage .field:last-child{border-bottom:0 !important}
+#eventPage .field>span,#eventPage .field>strong{align-self:center !important}
+#eventPage .field>strong{display:flex;align-items:center;min-height:48px}
+#eventPage .event-contact-call{
+  width:100%;min-height:48px;
+  display:flex !important;align-items:center !important;
+  color:#25282d !important
+}
+#eventPage .event-note{
+  margin-top:0 !important;
+  padding-top:11px !important;
+  border-top:1px solid #eceef0 !important
+}
+
+/* Rental: return to a lighter, quieter hierarchy. */
+#rentalPage .date-selector{margin:2px 0 10px !important}
+#rentalPage .rental-date-control{
+  min-height:44px !important;
+  display:flex !important;align-items:center !important;justify-content:space-between !important;
+  gap:12px !important;padding:10px 12px !important;
+  border:0 !important;border-radius:12px !important;
+  background:#f5f6f7 !important;box-shadow:none !important
+}
+#rentalPage .rental-date-icon{display:none !important}
+#rentalPage .rental-date-label{color:#757b82 !important;font-size:10px !important;font-weight:650 !important}
+#rentalPage .rental-date-control input{
+  min-width:132px !important;flex:0 0 auto !important;
+  padding:0 !important;border:0 !important;background:transparent !important;
+  color:#2d3136 !important;font-size:12px !important;font-weight:600 !important;text-align:right !important
+}
+#rentalPage .rental-search{height:42px !important;background:#f5f6f7 !important;border-radius:12px !important}
+#rentalPage .rental-search:focus-within{background:#f2f3f4 !important}
+#rentalPage .rental-filters{gap:5px !important;padding:1px 0 4px !important;border-bottom:0 !important}
+#rentalPage .rental-filter{
+  height:30px !important;padding:0 9px !important;
+  border:0 !important;border-radius:9px !important;
+  background:transparent !important;color:#737980 !important;
+  font-size:10px !important;font-weight:620 !important
+}
+#rentalPage .rental-filter.active{background:#f0f1f3 !important;color:#25282d !important}
+#rentalPage .rental-filter.active::after{content:none !important;display:none !important}
+
+/* Calendar: only real dates, no leading/trailing spacer cells. */
+#calendar .calendar-grid.dynamic{
+  display:block !important;padding:0 !important;border:0 !important;
+  background:transparent !important;overflow:visible !important
+}
+#calendar .calendar-days-v55{
+  --calendar-rule:#e9ebee;
+  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));width:100%
+}
+#calendar .calendar-month-day{
+  position:relative;width:100%;height:45px !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  padding:0 !important;margin:0 !important;
+  border:0 !important;border-bottom:1px solid var(--calendar-rule) !important;
+  border-radius:0 !important;background:transparent !important;color:#3d4349 !important
+}
+#calendar .calendar-month-number{
+  width:29px !important;height:29px !important;
+  display:grid !important;place-items:center !important;
+  border-radius:50% !important;font-size:11.5px !important;font-weight:600 !important;line-height:1 !important
+}
+#calendar .calendar-month-markers{
+  position:absolute !important;left:50% !important;bottom:4px !important;
+  transform:translateX(-50%) !important;
+  height:3px !important;display:flex !important;gap:2px !important
+}
+#calendar .calendar-month-markers i{width:7px !important;height:2px !important;border-radius:3px !important}
+#calendar .calendar-month-day.today .calendar-month-number{box-shadow:inset 0 0 0 1.2px #cfd3d8 !important}
+#calendar .calendar-month-day.selected .calendar-month-number{background:#25272b !important;color:#fff !important;box-shadow:none !important}
+
+/* New-event sheet: slower travel + inline validation. */
+#newEventOverlay{
+  transition:background 360ms ease,backdrop-filter 420ms ease,-webkit-backdrop-filter 420ms ease,opacity 240ms ease,visibility 0s linear 700ms !important
+}
+#newEventOverlay.open{transition-delay:0s !important}
+#newEventOverlay .new-event-sheet{
+  transform:translate3d(0,112%,0) scale(.99) !important;
+  will-change:transform;
+  transition:transform 620ms cubic-bezier(.22,.82,.16,1) !important
+}
+#newEventOverlay.open .new-event-sheet{transform:translate3d(0,0,0) scale(1) !important}
+.new-event-alert{
+  padding:10px 11px;border:1px solid #ead7d5;border-radius:11px;background:#fff7f6;
+  color:#9c4d47;font-size:11px;font-weight:600;line-height:1.35
+}
+.new-event-alert[hidden]{display:none !important}
+#newEventOverlay [data-new-event-field].field-error{color:#9c4d47 !important}
+#newEventOverlay [data-new-event-field].field-error input{
+  box-shadow:inset 0 0 0 1px #dca7a2 !important;background:#fffafa !important
+}
+
+/* ============================================================
+   v56 — final system pass: priority, calendar, edit, estimate
+   ============================================================ */
+
+/* Priority becomes metadata, not a second mini-card. */
+.priority-badge,
+#eventPage .event-title-meta-line .priority-badge{
+  min-height:20px !important;
+  height:20px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  gap:5px !important;
+  font-size:9px !important;
+  font-weight:650 !important;
+}
+.priority-badge::before{width:6px !important;height:6px !important}
+.card.priority-urgent,.card.priority-high{
+  border-color:var(--border) !important;
+  box-shadow:var(--shadow) !important;
+}
+#eventsPage .card-title-line>.priority-badge{margin-left:2px !important}
+
+/* Calendar: a larger month surface with no spacer dates and no cell-box look. */
+#calendar .calendar-grid.dynamic{
+  margin-top:3px !important;
+  padding:12px 9px 10px !important;
+  border:0 !important;
+  border-radius:18px !important;
+  background:#f7f8f9 !important;
+  box-shadow:none !important;
+}
+#calendar .calendar-days-v55{
+  --calendar-rule:transparent !important;
+  display:grid !important;
+  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+  grid-auto-rows:54px !important;
+  gap:1px 0 !important;
+  width:100% !important;
+}
+#calendar .calendar-month-day{
+  width:100% !important;
+  height:54px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  color:#34393f !important;
+  border-radius:13px !important;
+  transition:background 150ms ease,transform 150ms ease !important;
+}
+#calendar .calendar-month-day:hover{background:#f0f2f4 !important}
+#calendar .calendar-month-day:active{transform:scale(.96) !important}
+#calendar .calendar-month-number{
+  width:34px !important;
+  height:34px !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:50% !important;
+  font-size:13px !important;
+  font-weight:620 !important;
+  line-height:1 !important;
+}
+#calendar .calendar-month-markers{
+  position:absolute !important;
+  left:50% !important;
+  bottom:6px !important;
+  transform:translateX(-50%) !important;
+  display:flex !important;
+  gap:2px !important;
+  height:3px !important;
+}
+#calendar .calendar-month-markers i{width:7px !important;height:2px !important;border-radius:3px !important}
+#calendar .calendar-month-day.today .calendar-month-number{
+  background:#fff !important;
+  box-shadow:inset 0 0 0 1.2px #cfd4d9 !important;
+}
+#calendar .calendar-month-day.selected .calendar-month-number{
+  background:#25272b !important;
+  color:#fff !important;
+  box-shadow:0 4px 10px rgba(24,27,31,.13) !important;
+}
+#calendar .calendar-selected{margin-top:12px !important}
+
+/* Edit event: grouped, system-like settings instead of a stack of boxed inputs. */
+#editEventPage .page-inner{padding-top:12px !important}
+#editEventPage .page-title{margin-bottom:10px !important}
+#editEventPage .page-title p{display:none !important}
+.edit-event-form-v56{gap:10px !important}
+.edit-group-v56{
+  overflow:hidden;
+  border:0;
+  border-radius:15px;
+  background:#f6f7f8;
+  padding:10px 12px 3px;
+}
+.edit-group-head-v56{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:1px 1px 8px;
+}
+.edit-group-head-v56 strong{font-size:11.5px;font-weight:680;color:#30353a}
+.edit-group-head-v56 span{font-size:8.5px;font-weight:520;color:#9a9fa5;text-align:right}
+#editEventPage .edit-field-v56{
+  display:grid !important;
+  grid-template-columns:86px minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:10px !important;
+  min-height:46px;
+  padding:0 1px;
+  border-top:1px solid #e7e9ec;
+  color:#777c83 !important;
+  font-size:9.5px !important;
+  font-weight:570 !important;
+}
+#editEventPage .edit-field-v56>span{white-space:nowrap}
+#editEventPage .edit-field-v56 input,
+#editEventPage .edit-field-v56 select,
+#editEventPage .edit-field-v56 textarea{
+  width:100% !important;
+  min-width:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  color:#25292e !important;
+  font-size:12px !important;
+  font-weight:570 !important;
+  text-align:right;
+  outline:0 !important;
+}
+#editEventPage .edit-field-v56 input{height:45px !important}
+#editEventPage .edit-field-v56 select{height:45px !important;padding-right:17px !important}
+#editEventPage .edit-field-area-v56{align-items:start !important;padding:10px 1px !important}
+#editEventPage .edit-field-area-v56 textarea{
+  min-height:58px !important;
+  resize:none !important;
+  text-align:left !important;
+  line-height:1.45 !important;
+}
+.edit-split-v56{display:grid;grid-template-columns:1fr 1fr}
+.edit-split-v56 .edit-field-v56{grid-template-columns:48px minmax(0,1fr) !important}
+.edit-split-v56 .edit-field-v56 + .edit-field-v56{padding-left:11px !important;border-left:1px solid #e7e9ec}
+.edit-save-v56{height:44px !important;border-radius:12px !important;font-size:12px !important;font-weight:650 !important}
+
+/* Estimate: keep only information that affects the decision. */
+#estimatePage .estimate-list{gap:0 !important;margin-top:4px !important}
+#estimatePage .estimate-item{
+  padding:11px 7px !important;
+  border-radius:0 !important;
+  border-bottom:1px solid #eef0f2 !important;
+}
+#estimatePage .estimate-item:last-child{border-bottom:0 !important}
+#estimatePage .estimate-item:hover{background:#f7f8f9 !important;border-radius:11px !important}
+#estimatePage .estimate-item .item-main{display:grid;gap:3px !important}
+#estimatePage .estimate-item .item-main>strong{font-size:12.5px !important;font-weight:650 !important;color:#2f3439 !important}
+#estimatePage .estimate-item .item-main>span{font-size:9px !important;color:#969ba1 !important}
+#estimatePage .qty-chip{
+  min-width:34px !important;height:26px !important;
+  display:grid !important;place-items:center !important;
+  padding:0 7px !important;border-radius:8px !important;
+  font-size:9.5px !important;font-weight:680 !important
+}
+#estimatePage .booking-linked{margin-top:2px !important;font-size:8.5px !important}
+#estimatePage .booking-linked.warn{color:#b44e48 !important}
+#estimatePage .estimate-economy-line{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:6px !important;
+  margin-top:8px !important;
+}
+#estimatePage .estimate-economy-line span{
+  display:grid !important;
+  gap:2px !important;
+  color:#a0a4aa !important;
+  font-size:8px !important;
+  font-weight:560 !important;
+}
+#estimatePage .estimate-economy-line strong{
+  color:#50565d !important;
+  font-size:10px !important;
+  font-weight:650 !important;
+  white-space:nowrap !important;
+}
+#estimatePage .estimate-economy-line .profit strong{color:#24865d !important}
+#estimatePage .estimate-economy-line.negative .profit strong{color:#b84e49 !important}
+
+@media(max-width:380px){
+  #calendar .calendar-days-v55{grid-auto-rows:50px !important}
+  #calendar .calendar-month-day{height:50px !important}
+  .edit-group-head-v56 span{display:none}
+  #editEventPage .edit-field-v56{grid-template-columns:78px minmax(0,1fr) !important}
+}
+
+/* ============================================================
+   v57 — narrow alignment fix only
+   ============================================================ */
+
+/* Keep priority in one fixed place on every event preview.
+   Site-source subtitle may appear below the title, but priority
+   remains vertically centered at the right and never jumps rows. */
+#eventsPage .card-name{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  grid-template-rows:auto auto !important;
+  column-gap:9px !important;
+  row-gap:3px !important;
+  align-items:center !important;
+  min-width:0 !important;
+}
+#eventsPage .card-title-line{
+  grid-column:1 !important;
+  grid-row:1 !important;
+  display:block !important;
+  min-width:0 !important;
+}
+#eventsPage .card-title-line>strong{
+  display:block !important;
+  width:100% !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+#eventsPage .card-subline{
+  grid-column:1 !important;
+  grid-row:2 !important;
+  min-width:0 !important;
+  margin:0 !important;
+  line-height:1.15 !important;
+}
+#eventsPage .card-origin{
+  display:block !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  line-height:1.15 !important;
+}
+#eventsPage .card-name>.priority-badge{
+  grid-column:2 !important;
+  grid-row:1 / span 2 !important;
+  align-self:center !important;
+  justify-self:end !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+}
+#eventsPage .card-name:not(.has-origin)>.priority-badge{
+  grid-row:1 !important;
+}
+
+/* Restore the previous light release-booking button exactly. */
+#estimatePage .booking-actions #toggleBooking.release{
+  height:40px !important;
+  border:1px solid #d8e9df !important;
+  border-radius:10px !important;
+  background:#f4faf6 !important;
+  color:#287657 !important;
+  box-shadow:none !important;
+}
+
+/* ============================================================
+   v58 — estimate payment method, deliberately compact.
+   ============================================================ */
+.payment-method-card{
+  margin-top:9px;padding:10px 11px 11px;
+  border:0;border-radius:13px;background:#f5f6f7
+}
+.payment-method-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:8px
+}
+.payment-method-head strong{font-size:10.5px;font-weight:680;color:#34393f}
+.payment-method-head span{font-size:9.5px;font-weight:600;color:#888e95}
+.payment-method-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.payment-method-options button{
+  height:34px;padding:0 7px;border:0;border-radius:9px;background:#fff;
+  color:#555b62;font-size:10px;font-weight:620;box-shadow:inset 0 0 0 1px #e5e7ea;
+  transition:background 140ms ease,color 140ms ease,box-shadow 140ms ease,transform 100ms ease
+}
+.payment-method-options button:active{transform:scale(.98)}
+.payment-method-options button.active{
+  background:#25272b;color:#fff;box-shadow:none
+}
+.client-preview-payment{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:7px;padding:9px 11px;border-radius:10px;background:#f4f5f6;
+  font-size:10.5px
+}
+.client-preview-payment[hidden]{display:none !important}
+.client-preview-payment span{color:#7b8188;font-weight:560}
+.client-preview-payment strong{color:#34393f;font-weight:650}
