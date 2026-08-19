@@ -93,14 +93,14 @@ function populateEventPage(){
   const eventContactCall=document.getElementById('eventContactCall');
   eventContactCall.classList.toggle('disabled',!contact.tel);
   eventContactCall.setAttribute('aria-disabled',contact.tel?'false':'true');
-  if(contact.tel)eventContactCall.href=contact.tel;
-  else eventContactCall.removeAttribute('href');
+  eventContactCall.disabled=!contact.tel;
+  eventContactCall.dataset.callEventId=e.id;
 
   const call=document.getElementById('callClient');
   call.classList.toggle('disabled',!contact.tel);
   call.setAttribute('aria-disabled',contact.tel?'false':'true');
-  if(contact.tel)call.href=contact.tel;
-  else call.removeAttribute('href');
+  call.disabled=!contact.tel;
+  call.dataset.callEventId=e.id;
 
   const advance=document.getElementById('advanceEventBtn');
   const last=selectedStageIndex>=stages.length-1;

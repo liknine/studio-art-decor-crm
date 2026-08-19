@@ -402,10 +402,10 @@
         <div class="field"><span>Дата и время</span><strong id="eventDate">24.08.2026 · 14:00</strong></div>
         <div class="field"><span>Место</span><strong id="eventPlace">Falcon Club</strong></div>
         <div class="field"><span>Контакт</span><strong>
-          <a class="event-contact-call" id="eventContactCall" href="tel:+375290000000">
+          <button type="button" class="event-contact-call" id="eventContactCall">
             <span class="contact-avatar" id="eventContactAvatar">А</span>
             <span class="event-contact-copy" id="eventContact">Анна · +375 29 000-00-00</span>
-          </a>
+          </button>
         </strong></div>
       </div>
 
@@ -418,10 +418,10 @@
       </div>
 
       <div class="event-quick-actions">
-        <a class="event-quick" id="callClient" href="tel:+375290000000">
+        <button type="button" class="event-quick" id="callClient">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3.8 9 3l2 5-2.2 1.2a14.8 14.8 0 0 0 6 6L16 13l5 2-.8 2.4c-.5 1.4-1.9 2.2-3.3 1.9C10.5 18 6 13.5 4.7 7.1 4.4 5.7 5.2 4.3 6.6 3.8Z"></path></svg>
           <span>Позвонить</span>
-        </a>
+        </button>
         <button class="event-quick primary" id="advanceEventBtn">
           <span id="advanceEventText">В следующий этап</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
@@ -706,14 +706,15 @@
   </section>
 </div>
 
-<div class="overlay" id="reminderOverlay">
-  <section class="sheet">
+<div class="overlay reminder-overlay" id="reminderOverlay">
+  <section class="sheet reminder-sheet" role="dialog" aria-modal="true" aria-labelledby="reminderOverlayTitle">
     <div class="grab"></div>
     <div class="sheet-head">
       <strong id="reminderOverlayTitle">Новое напоминание</strong>
       <button class="close js-close-reminder"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
     </div>
-    <div class="form">
+    <div class="form reminder-sheet-content">
+      <div class="new-event-alert" id="reminderAlert" role="status" aria-live="polite" hidden></div>
       <label>О чём напомнить<textarea id="newReminderText" placeholder="Например: подтвердить монтаж с клиентом"></textarea></label>
       <div>
         <div class="helper" style="margin-bottom:6px">Быстрый интервал</div>
@@ -771,17 +772,35 @@
 </div>
 
 <div class="overlay" id="clientEstimateOverlay">
-  <section class="sheet">
+  <section class="sheet pdf-action-sheet" role="dialog" aria-modal="true" aria-labelledby="clientPdfTitle">
     <div class="grab"></div>
     <div class="sheet-head">
-      <div><strong>Смета для клиента</strong><div class="helper">Предпросмотр PDF</div></div>
+      <div><strong id="clientPdfTitle">PDF для клиента</strong><div class="helper">Документ без внутренних расходов и прибыли</div></div>
       <button class="close" id="closeClientEstimate"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
     </div>
-    <div class="client-preview-list" id="clientEstimateRows"></div>
-    <div class="client-preview-total"><span>Итого</span><strong id="clientEstimateTotal">0 BYN</strong></div>
-    <div class="client-preview-payment" id="clientEstimatePayment" hidden><span>Способ оплаты</span><strong id="clientEstimatePaymentValue"></strong></div>
-    <p class="client-preview-note">В клиентском документе нет наших расходов и прибыли. Внутренние расходы также не выводятся.</p>
-    <div class="client-actions single"><button class="primary" id="finishClientPdf">Сформировать PDF</button></div>
+    <div class="pdf-action-status" id="clientPdfStatus" role="status" aria-live="polite">Выберите действие с клиентским документом.</div>
+    <div class="pdf-action-list">
+      <button type="button" class="primary" id="shareClientPdf">Отправить в Telegram</button>
+      <button type="button" id="downloadClientPdf">Скачать PDF</button>
+      <a id="clientPdfFallback" href="" target="_blank" rel="noopener noreferrer" hidden>Открыть готовый PDF</a>
+      <button type="button" id="cancelClientPdf">Отмена</button>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="callHandoffOverlay">
+  <section class="sheet call-handoff-sheet" role="dialog" aria-modal="true" aria-labelledby="callHandoffTitle">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <div><strong id="callHandoffTitle">Позвонить клиенту</strong><div class="helper">Безопасный переход к системному звонку</div></div>
+      <button class="close" id="closeCallHandoff" aria-label="Закрыть"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
+    </div>
+    <div class="call-handoff-status" id="callHandoffStatus" role="status" aria-live="polite">Подготавливаем звонок…</div>
+    <div class="pdf-action-list">
+      <a class="primary" id="continueCallHandoff" href="" target="_blank" rel="noopener noreferrer" hidden>Продолжить звонок</a>
+      <button type="button" id="copyCallNumber" disabled>Скопировать номер</button>
+      <button type="button" id="cancelCallHandoff">Отмена</button>
+    </div>
   </section>
 </div>
 

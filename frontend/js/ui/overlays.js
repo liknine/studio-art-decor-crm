@@ -1,3 +1,11 @@
+function syncModalState(){
+  const open=Boolean(document.querySelector('.overlay.open'));
+  document.documentElement.classList.toggle('crm-modal-open',open);
+  document.body.classList.toggle('crm-modal-open',open);
+}
+function openModal(overlay){overlay?.classList.add('open');syncModalState();}
+function closeModal(overlay){overlay?.classList.remove('open');syncModalState();}
+
 function clearNewEventValidation(){
   const alert=document.getElementById('newEventAlert');
   if(alert){alert.hidden=true;alert.textContent='';}
@@ -360,7 +368,26 @@ function resetReminderEditor(){
   document.getElementById('newReminderText').value='';
   document.getElementById('newReminderDate').value='';
   document.getElementById('newReminderTime').value='';
+  const alert=document.getElementById('reminderAlert');
+  alert.hidden=true;alert.textContent='';
+  document.getElementById('newReminderText').removeAttribute('aria-invalid');
   document.querySelectorAll('.quick-times button').forEach(button=>button.classList.remove('active'));
+}
+function quickReminderTarget(event,label){
+  const offsets={'За 7 дней':7*24*60,'За 3 дня':3*24*60,'За 1 день':24*60,'За 3 часа':3*60,'За 1 час':60};
+  const minutes=offsets[String(label||'')];
+  const dateKey=dateKeyFromEventLabel(event?.date);
+  if(!minutes||!dateKey)return null;
+  const parts=dateKey.split('-').map(Number);
+  const time=/^\d{2}:\d{2}$/.test(event?.time||'')?event.time:'12:00';
+  const timeParts=time.split(':').map(Number);
+  const target=new Date(parts[0],parts[1]-1,parts[2],timeParts[0],timeParts[1]);
+  target.setMinutes(target.getMinutes()-minutes);
+  const pad=value=>String(value).padStart(2,'0');
+  return {
+    date:`${target.getFullYear()}-${pad(target.getMonth()+1)}-${pad(target.getDate())}`,
+    time:`${pad(target.getHours())}:${pad(target.getMinutes())}`
+  };
 }
 function openReminderEditor(reminderId=''){
   resetReminderEditor();
@@ -376,10 +403,10 @@ function openReminderEditor(reminderId=''){
       button.classList.toggle('active',button.textContent.trim()===(reminder.kind||''));
     });
   }
-  document.getElementById('reminderOverlay').classList.add('open');
+  openModal(document.getElementById('reminderOverlay'));
 }
 function closeReminderEditor(){
-  document.getElementById('reminderOverlay').classList.remove('open');
+  closeModal(document.getElementById('reminderOverlay'));
   resetReminderEditor();
 }
 document.getElementById('addReminderBtn').addEventListener('click',()=>openReminderEditor());
@@ -388,10 +415,23 @@ document.getElementById('reminderList').addEventListener('click',event=>{
   if(card)openReminderEditor(card.dataset.reminderId||'');
 });
 document.querySelector('.js-close-reminder').addEventListener('click',closeReminderEditor);
-document.getElementById('saveReminder').addEventListener('click',()=>{
+document.getElementById('newReminderText').addEventListener('input',()=>{
+  const alert=document.getElementById('reminderAlert');
+  alert.hidden=true;alert.textContent='';
+  document.getElementById('newReminderText').removeAttribute('aria-invalid');
+});
+document.getElementById('saveReminder').addEventListener('click',async()=>{
   const e=selectedEvent();
   if(!e)return;
-  const text=document.getElementById('newReminderText').value.trim()||'Напоминание';
+  const textInput=document.getElementById('newReminderText');
+  const text=textInput.value.trim();
+  if(!text){
+    const alert=document.getElementById('reminderAlert');
+    alert.textContent='Введите текст напоминания.';alert.hidden=false;
+    textInput.setAttribute('aria-invalid','true');
+    textInput.focus();
+    return;
+  }
   const activeQuick=document.querySelector('.quick-times button.active');
   const reminderDraft={
     text,
@@ -399,18 +439,33 @@ document.getElementById('saveReminder').addEventListener('click',()=>{
     date:document.getElementById('newReminderDate').value||'',
     time:document.getElementById('newReminderTime').value||''
   };
+  const previous=e.reminderItems.map(item=>({...item}));
+  const saveButton=document.getElementById('saveReminder');
+  saveButton.disabled=true;
   if(editingReminderId)updateEventReminder(e,editingReminderId,reminderDraft);
   else createEventReminder(e,reminderDraft);
   e.reminders=e.reminderItems.length;
-  persistCRM();
-  closeReminderEditor();
-  renderTrack();
-  renderReminders();
-  populateEventPage();
-  notify('Напоминание сохранено');
+  try{
+    await CRMDataLayer.save(stages);
+    closeReminderEditor();
+    renderTrack();
+    renderReminders();
+    populateEventPage();
+    notify('Напоминание сохранено');
+  }catch(error){
+    e.reminderItems=previous;e.reminders=previous.length;
+    const alert=document.getElementById('reminderAlert');
+    alert.textContent='Не удалось сохранить напоминание. Проверьте соединение и повторите.';alert.hidden=false;
+  }finally{
+    saveButton.disabled=false;
+  }
 });
 document.querySelectorAll('.quick-times button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.quick-times button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  const target=quickReminderTarget(selectedEvent(),b.textContent.trim());
+  if(!target){notify('Сначала укажите дату мероприятия');return;}
+  document.getElementById('newReminderDate').value=target.date;
+  document.getElementById('newReminderTime').value=target.time;
 }));
 function openNewEventSheet(){
   const plus=document.getElementById('newEventBtn');
@@ -540,24 +595,167 @@ document.getElementById('paymentMethodOptions').addEventListener('click',e=>{
   renderPaymentMethod();
   crmHaptic('soft');
 });
+let currentCallPhone='';
+function closeCallHandoff(){
+  closeModal(document.getElementById('callHandoffOverlay'));
+  currentCallPhone='';
+  const link=document.getElementById('continueCallHandoff');
+  link.hidden=true;link.href='';
+  document.getElementById('copyCallNumber').disabled=true;
+}
+function openTelegramHttps(url){
+  const webApp=window.Telegram?.WebApp;
+  if(webApp&&typeof webApp.openLink==='function'){
+    webApp.openLink(url,{try_instant_view:false});
+    return true;
+  }
+  return false;
+}
+async function requestEventCall(eventId=''){
+  const location=crmEventLocation(stages,eventId||selectedEvent()?.id||'');
+  const event=location?.event;
+  const localPhone=contactInfo(event?.contact||'');
+  if(!event||!localPhone.tel){notify('Номер телефона не указан');return;}
+  const overlay=document.getElementById('callHandoffOverlay');
+  const status=document.getElementById('callHandoffStatus');
+  const continueLink=document.getElementById('continueCallHandoff');
+  const copyButton=document.getElementById('copyCallNumber');
+  currentCallPhone=localPhone.normalized;
+  status.textContent='Подготавливаем безопасный переход к звонку…';
+  continueLink.hidden=true;continueLink.href='';copyButton.disabled=true;
+  openModal(overlay);
+  try{
+    const result=await CRMDataLayer.createCallLink(event.id);
+    if(!/^https:\/\//.test(result?.callUrl||''))throw new Error('Invalid call handoff URL');
+    currentCallPhone=String(result.normalizedPhone||localPhone.normalized);
+    continueLink.href=result.callUrl;
+    continueLink.hidden=false;
+    copyButton.disabled=false;
+    status.textContent=`Номер ${result.displayPhone||localPhone.phone}. Если системный звонок не открылся, нажмите «Продолжить звонок».`;
+    try{openTelegramHttps(result.callUrl)}catch(error){/* visible user-action fallback remains */}
+  }catch(error){
+    status.textContent=error?.code==='PHONE_NOT_AVAILABLE'
+      ? 'Номер телефона не указан.'
+      : 'Не удалось подготовить звонок. Можно скопировать номер.';
+    copyButton.disabled=!currentCallPhone;
+    notify(status.textContent);
+  }
+}
+document.getElementById('eventContactCall').addEventListener('click',event=>requestEventCall(event.currentTarget.dataset.callEventId||''));
+document.getElementById('callClient').addEventListener('click',event=>requestEventCall(event.currentTarget.dataset.callEventId||''));
+document.getElementById('continueCallHandoff').addEventListener('click',event=>{
+  const url=event.currentTarget.href;
+  if(url&&openTelegramHttps(url))event.preventDefault();
+});
+document.getElementById('copyCallNumber').addEventListener('click',async()=>{
+  if(!currentCallPhone){notify('Номер телефона не указан');return;}
+  try{
+    if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(currentCallPhone);
+    else{
+      const input=document.createElement('textarea');input.value=currentCallPhone;
+      input.style.position='fixed';input.style.opacity='0';document.body.appendChild(input);
+      input.select();document.execCommand('copy');input.remove();
+    }
+    notify('Номер скопирован');
+  }catch(error){notify(`Номер: ${currentCallPhone}`);}
+});
+document.getElementById('closeCallHandoff').addEventListener('click',closeCallHandoff);
+document.getElementById('cancelCallHandoff').addEventListener('click',closeCallHandoff);
+
+function resetClientPdfSheet(){
+  document.getElementById('clientPdfStatus').textContent='Выберите действие с клиентским документом.';
+  const fallback=document.getElementById('clientPdfFallback');
+  fallback.hidden=true;fallback.href='';
+  document.getElementById('shareClientPdf').disabled=false;
+  document.getElementById('downloadClientPdf').disabled=false;
+}
+function closeClientPdfSheet(){closeModal(document.getElementById('clientEstimateOverlay'));resetClientPdfSheet();}
+function setClientPdfBusy(busy,message){
+  document.getElementById('shareClientPdf').disabled=busy;
+  document.getElementById('downloadClientPdf').disabled=busy;
+  if(message)document.getElementById('clientPdfStatus').textContent=message;
+}
+function showClientPdfFallback(result,message){
+  const fallback=document.getElementById('clientPdfFallback');
+  fallback.href=result.downloadUrl;fallback.hidden=false;
+  document.getElementById('clientPdfStatus').textContent=message;
+}
+async function runClientPdfAction(purpose){
+  const event=selectedEvent();
+  if(!event){notify('Мероприятие не найдено');return;}
+  setClientPdfBusy(true,purpose==='share'?'Подготавливаем отправку в Telegram…':'Формируем PDF…');
+  try{
+    const result=await CRMDataLayer.createClientPdf(event.id,purpose);
+    if(!/^https:\/\//.test(result?.downloadUrl||''))throw new Error('Invalid PDF URL');
+    if(purpose==='share'){
+      const webApp=window.Telegram?.WebApp;
+      if(typeof webApp?.shareMessage==='function'&&result.preparedMessageId){
+        webApp.shareMessage(result.preparedMessageId,success=>{
+          document.getElementById('clientPdfStatus').textContent=success
+            ? 'PDF отправлен через Telegram.'
+            : 'Отправка отменена или не поддержана. PDF можно скачать.';
+          showClientPdfFallback(result,document.getElementById('clientPdfStatus').textContent);
+          if(success)notify('PDF отправлен');
+        });
+      }else{
+        showClientPdfFallback(result,'Telegram share недоступен. Используйте готовый PDF.');
+        notify('Отправка недоступна — PDF готов к скачиванию');
+      }
+      return;
+    }
+
+    const webApp=window.Telegram?.WebApp;
+    if(typeof webApp?.downloadFile==='function'){
+      webApp.downloadFile({url:result.downloadUrl,file_name:result.fileName||'studio-art-decor-estimate.pdf'},accepted=>{
+        document.getElementById('clientPdfStatus').textContent=accepted
+          ? 'Скачивание PDF начато.'
+          : 'Скачивание отменено. Можно открыть готовый PDF.';
+        showClientPdfFallback(result,document.getElementById('clientPdfStatus').textContent);
+        if(accepted)notify('Скачивание PDF начато');
+      });
+    }else if(openTelegramHttps(result.downloadUrl)){
+      showClientPdfFallback(result,'PDF открыт во внешнем окне. Ссылка действует ограниченное время.');
+    }else{
+      showClientPdfFallback(result,'PDF готов. Нажмите «Открыть готовый PDF».');
+    }
+  }catch(error){
+    const message=error?.code==='EMPTY_ESTIMATE'
+      ? 'В смете нет позиций, доступных клиенту.'
+      : 'Не удалось сформировать PDF. Повторите попытку.';
+    document.getElementById('clientPdfStatus').textContent=message;
+    notify(message);
+  }finally{
+    setClientPdfBusy(false);
+  }
+}
 document.getElementById('pdfEstimate').addEventListener('click',()=>{
-  renderClientEstimatePreview();
-  document.getElementById('clientEstimateOverlay').classList.add('open');
+  resetClientPdfSheet();
+  openModal(document.getElementById('clientEstimateOverlay'));
 });
-document.getElementById('closeClientEstimate').addEventListener('click',()=>document.getElementById('clientEstimateOverlay').classList.remove('open'));
-document.getElementById('finishClientPdf').addEventListener('click',()=>{
-  document.getElementById('clientEstimateOverlay').classList.remove('open');
-  notify('PDF для клиента сформирован');
-});
+document.getElementById('closeClientEstimate').addEventListener('click',closeClientPdfSheet);
+document.getElementById('cancelClientPdf').addEventListener('click',closeClientPdfSheet);
+document.getElementById('shareClientPdf').addEventListener('click',()=>runClientPdfAction('share'));
+document.getElementById('downloadClientPdf').addEventListener('click',()=>runClientPdfAction('download'));
 
 document.querySelectorAll('.overlay').forEach(overlay=>{
   overlay.addEventListener('click',e=>{
-    if(e.target===overlay)overlay.classList.remove('open');
+    if(e.target===overlay){
+      if(overlay.id==='reminderOverlay')closeReminderEditor();
+      else if(overlay.id==='callHandoffOverlay')closeCallHandoff();
+      else if(overlay.id==='clientEstimateOverlay')closeClientPdfSheet();
+      else closeModal(overlay);
+    }
   });
 });
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
   const open=[...document.querySelectorAll('.overlay.open')].pop();
-  if(open){open.classList.remove('open');return;}
+  if(open){
+    if(open.id==='reminderOverlay')closeReminderEditor();
+    else if(open.id==='callHandoffOverlay')closeCallHandoff();
+    else if(open.id==='clientEstimateOverlay')closeClientPdfSheet();
+    else closeModal(open);
+    return;
+  }
 });

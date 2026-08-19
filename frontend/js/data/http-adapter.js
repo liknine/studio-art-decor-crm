@@ -86,4 +86,16 @@ class HttpCRMAdapter{
     this.revision=String(payload?.revision||this.revision||snapshot.updatedAt);
     return {ok:true,revision:this.revision};
   }
+  async createCallLink(eventId){
+    return await this.request('/crm/call-link',{
+      method:'POST',
+      body:JSON.stringify({eventId:String(eventId||'')})
+    });
+  }
+  async createClientPdf(eventId,purpose='download'){
+    return await this.request('/crm/client-pdf',{
+      method:'POST',
+      body:JSON.stringify({eventId:String(eventId||''),purpose:String(purpose||'download')})
+    });
+  }
 }

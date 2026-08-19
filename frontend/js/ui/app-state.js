@@ -32,10 +32,16 @@ function normalizedPhoneParts(raw=''){
   for(const candidateValue of candidates){
     const display=candidateValue.trim();
     const digits=display.replace(/\D/g,'');
-    if(digits.length<7 || digits.length>15)continue;
+    let normalized='';
+    if(display.startsWith('+')&&digits.length>=7&&digits.length<=15)normalized='+'+digits;
+    else if(digits.length===12&&digits.startsWith('375'))normalized='+'+digits;
+    else if(digits.length===11&&digits.startsWith('80'))normalized='+375'+digits.slice(2);
+    else if(digits.length===10&&digits.startsWith('0'))normalized='+375'+digits.slice(1);
+    else if(digits.length===9)normalized='+375'+digits;
+    if(!/^\+[1-9]\d{6,14}$/.test(normalized))continue;
     return {
       display,
-      normalized:(display.startsWith('+')?'+':'')+digits
+      normalized
     };
   }
   return {display:'',normalized:''};

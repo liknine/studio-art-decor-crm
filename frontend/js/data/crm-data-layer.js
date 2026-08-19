@@ -70,6 +70,22 @@ const CRMDataLayer={
   },
   async flush(){
     return await this.pendingSave;
+  },
+  async createCallLink(eventId){
+    if(!this.adapter || typeof this.adapter.createCallLink!=='function'){
+      const error=new Error('Protected call handoff requires the production API');
+      error.code='FEATURE_REQUIRES_SERVER';
+      throw error;
+    }
+    return await this.adapter.createCallLink(eventId);
+  },
+  async createClientPdf(eventId,purpose='download'){
+    if(!this.adapter || typeof this.adapter.createClientPdf!=='function'){
+      const error=new Error('Client PDF requires the production API');
+      error.code='FEATURE_REQUIRES_SERVER';
+      throw error;
+    }
+    return await this.adapter.createClientPdf(eventId,purpose);
   }
 };
 

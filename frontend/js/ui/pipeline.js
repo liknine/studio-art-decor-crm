@@ -43,7 +43,7 @@ function eventCardHTML(stage,e,stageIndex,eventIndex){
     ? `Позвонить ${esc(contact.name)} по номеру ${esc(contact.phone)}`
     : `Контакт ${esc(contact.name)}`;
   const contactControl=contact.tel
-    ? `<a class="contact-pill contact-call" href="${contact.tel}" style="${contactStyle}" aria-label="${contactLabel}"><span class="contact-avatar">${esc(contact.initial)}</span>${esc(e.contact)}</a>`
+    ? `<button type="button" class="contact-pill contact-call" data-call-event-id="${esc(e.id)}" style="${contactStyle}" aria-label="${contactLabel}"><span class="contact-avatar">${esc(contact.initial)}</span>${esc(e.contact)}</button>`
     : `<span class="contact-pill contact-call disabled" style="${contactStyle}" aria-disabled="true" aria-label="${contactLabel}"><span class="contact-avatar">${esc(contact.initial)}</span>${esc(e.contact)}</span>`;
   const reminderCount=eventReminderCount(e);
   const estimateItems=eventEstimate(e);
@@ -338,6 +338,7 @@ track.addEventListener('click',e=>{
   if(contactCall){
     e.stopPropagation();
     crmHaptic('soft');
+    requestEventCall(contactCall.dataset.callEventId||'');
     return;
   }
 
