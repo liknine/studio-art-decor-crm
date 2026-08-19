@@ -326,7 +326,9 @@ svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.55;strok
 .reminder-list{display:grid;gap:8px}
 .reminder-card{
   display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:10px;align-items:center;
-  padding:11px;border:1px solid var(--border);border-radius:11px;background:#fff;box-shadow:0 1px 2px rgba(20,25,35,.04)
+  width:100%;padding:11px;border:1px solid var(--border);border-radius:11px;background:#fff;
+  box-shadow:0 1px 2px rgba(20,25,35,.04);text-align:left;
+  appearance:none;-webkit-appearance:none
 }
 .reminder-icon{
   width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:#f3f4f5;color:#62666d
@@ -2105,6 +2107,12 @@ html[data-crm-nav-direction="switch"]::view-transition-new(crm-page){
   touch-action:manipulation;
   cursor:pointer;
 }
+.contact-call.disabled,
+.event-contact-call.disabled,
+#callClient.disabled{
+  touch-action:auto;
+  cursor:default;
+}
 
 /* Do not waste compositor work on animations the user has disabled. */
 @media(prefers-reduced-motion:reduce){
@@ -3587,3 +3595,32 @@ button,a,.card.clickable,.stage-chip,.tool{touch-action:manipulation;-webkit-tap
 .client-preview-payment[hidden]{display:none !important}
 .client-preview-payment span{color:#7b8188;font-weight:560}
 .client-preview-payment strong{color:#34393f;font-weight:650}
+
+/* iPhone editable controls: keep WebKit at 1:1 focus scale. */
+@media (max-width:600px){
+  html.telegram-mini-app #crmApp input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  html.telegram-mini-app #crmApp textarea,
+  html.telegram-mini-app #crmApp select{
+    min-width:0;
+    font-size:16px !important;
+  }
+
+  html.telegram-mini-app #crmApp .form-grid>*{
+    min-width:0;
+  }
+
+  html.crm-keyboard-open .overlay.open .sheet{
+    max-height:calc(100% - 8px) !important;
+    overflow-y:auto !important;
+    overscroll-behavior-y:contain !important;
+    -webkit-overflow-scrolling:touch;
+    scroll-padding-bottom:calc(16px + var(--crm-safe-bottom));
+  }
+
+  html.crm-keyboard-open .overlay.open .sheet-head{
+    position:sticky;
+    z-index:4;
+    top:0;
+    background:inherit;
+  }
+}

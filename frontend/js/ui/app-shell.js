@@ -1,5 +1,13 @@
 const nativeMobile=window.matchMedia('(max-width:600px)').matches;
 const telegramWebApp=window.Telegram && window.Telegram.WebApp;
+const mobileEditableSelector='input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),textarea,select';
+let expandedMobileShellHeight=0;
+let mobileShellWidth=Math.round(window.innerWidth||0);
+
+function hasFocusedEditable(){
+  const active=document.activeElement;
+  return Boolean(active && typeof active.matches==='function' && active.matches(mobileEditableSelector));
+}
 
 function insetValue(source,side){
   const value=Number(source && source[side]);
@@ -17,7 +25,7 @@ function syncTelegramSafeArea(){
   }
 }
 
-function syncMobileShellHeight(){
+function syncMobileShellHeight(focusedOverride){
   if(!nativeMobile)return;
 
   let h=0;
@@ -39,6 +47,28 @@ function syncMobileShellHeight(){
     h=previewLike ? raw-120 : raw;
   }
 
+  const currentWidth=Math.round(window.innerWidth||0);
+  if(currentWidth && mobileShellWidth && currentWidth!==mobileShellWidth){
+    expandedMobileShellHeight=0;
+  }
+  if(currentWidth)mobileShellWidth=currentWidth;
+
+  const focused=typeof focusedOverride==='boolean' ? focusedOverride : hasFocusedEditable();
+  const visualHeight=Math.round((window.visualViewport && window.visualViewport.height)||0);
+  if(!expandedMobileShellHeight && h>0)expandedMobileShellHeight=h;
+
+  const baseHeight=Math.max(h,expandedMobileShellHeight);
+  const keyboardOpen=focused && visualHeight>0 && baseHeight-visualHeight>=80;
+  if(keyboardOpen){
+    h=Math.min(baseHeight,visualHeight);
+  }else if(!focused){
+    const keyboardStillClosing=visualHeight>0 && expandedMobileShellHeight-visualHeight>=80;
+    if(keyboardStillClosing)h=expandedMobileShellHeight;
+    else if(h>0)expandedMobileShellHeight=h;
+  }
+
+  document.documentElement.classList.toggle('crm-keyboard-open',keyboardOpen);
+
   if(h>0){
     document.documentElement.style.setProperty('--crm-shell-h',h+'px');
   }
@@ -58,6 +88,15 @@ window.addEventListener('resize',syncMobileShellHeight,{passive:true});
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize',syncMobileShellHeight,{passive:true});
 }
+document.addEventListener('focusin',event=>{
+  if(event.target?.matches?.(mobileEditableSelector))syncMobileShellHeight(true);
+});
+document.addEventListener('focusout',event=>{
+  if(event.target?.matches?.(mobileEditableSelector)){
+    syncMobileShellHeight(false);
+    requestAnimationFrame(syncMobileShellHeight);
+  }
+});
 if(telegramWebApp && typeof telegramWebApp.onEvent==='function'){
   telegramWebApp.onEvent('viewportChanged',syncMobileShellHeight);
   telegramWebApp.onEvent('safeAreaChanged',syncTelegramSafeArea);

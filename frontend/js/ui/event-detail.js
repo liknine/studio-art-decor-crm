@@ -91,13 +91,16 @@ function populateEventPage(){
   eventContactAvatar.textContent=contact.initial;
   eventContactAvatar.style.setProperty('--contact-color',contactColor(contact.name));
   const eventContactCall=document.getElementById('eventContactCall');
-  eventContactCall.href=contact.tel;
-  eventContactCall.classList.toggle('disabled',!contact.phone);
+  eventContactCall.classList.toggle('disabled',!contact.tel);
+  eventContactCall.setAttribute('aria-disabled',contact.tel?'false':'true');
+  if(contact.tel)eventContactCall.href=contact.tel;
+  else eventContactCall.removeAttribute('href');
 
-  const phone=contact.phone;
   const call=document.getElementById('callClient');
-  call.href=contact.tel;
-  call.classList.toggle('disabled',!phone);
+  call.classList.toggle('disabled',!contact.tel);
+  call.setAttribute('aria-disabled',contact.tel?'false':'true');
+  if(contact.tel)call.href=contact.tel;
+  else call.removeAttribute('href');
 
   const advance=document.getElementById('advanceEventBtn');
   const last=selectedStageIndex>=stages.length-1;
@@ -222,10 +225,10 @@ function renderReminders(){
   const host=document.getElementById('reminderList');
   if(!host)return;
   host.innerHTML=rows.length?rows.map(r=>`
-    <div class="reminder-card" data-reminder-id="${esc(r.id)}">
+    <button type="button" class="reminder-card" data-reminder-id="${esc(r.id)}" aria-label="Редактировать напоминание: ${esc(r.text)}">
       <div class="reminder-icon"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg></div>
       <div class="reminder-copy"><strong>${esc(r.text)}</strong><span>${esc(r.kind||'CRM-напоминание')}</span></div>
       <div class="reminder-time">${esc(reminderDateLabel(r))}</div>
-    </div>`).join(''):`<div class="empty">Напоминаний пока нет</div>`;
+    </button>`).join(''):`<div class="empty">Напоминаний пока нет</div>`;
   if(event)event.reminders=rows.length;
 }

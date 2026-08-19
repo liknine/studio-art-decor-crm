@@ -39,6 +39,12 @@ function eventCardHTML(stage,e,stageIndex,eventIndex){
   const cardSubtitle=eventCardSubtitle(e);
   const contact=contactInfo(e.contact);
   const contactStyle=`--contact-color:${contactColor(contact.name)}`;
+  const contactLabel=contact.phone
+    ? `Позвонить ${esc(contact.name)} по номеру ${esc(contact.phone)}`
+    : `Контакт ${esc(contact.name)}`;
+  const contactControl=contact.tel
+    ? `<a class="contact-pill contact-call" href="${contact.tel}" style="${contactStyle}" aria-label="${contactLabel}"><span class="contact-avatar">${esc(contact.initial)}</span>${esc(e.contact)}</a>`
+    : `<span class="contact-pill contact-call disabled" style="${contactStyle}" aria-disabled="true" aria-label="${contactLabel}"><span class="contact-avatar">${esc(contact.initial)}</span>${esc(e.contact)}</span>`;
   const reminderCount=eventReminderCount(e);
   const estimateItems=eventEstimate(e);
   const hasEstimate=estimateItems.length>0;
@@ -67,7 +73,7 @@ function eventCardHTML(stage,e,stageIndex,eventIndex){
       </div>
       <div class="card-body">
         <div class="row"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><span>${esc(e.date)}</span><span class="right">${esc(e.time)}</span></div>
-        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg><a class="contact-pill contact-call" href="${contact.tel}" style="${contactStyle}" aria-label="${contact.phone?`Позвонить ${esc(contact.name)} по номеру ${esc(contact.phone)}`:`Контакт ${esc(contact.name)}`}"><span class="contact-avatar">${esc(contact.initial)}</span>${esc(e.contact)}</a></div>
+        <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M6 20c0-4 2.6-6 6-6s6 2 6 6"></path></svg>${contactControl}</div>
         <div class="row"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg><span>${esc(e.place)}</span></div>
         ${e.comment?`<div class="row comment"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="4"></rect><path d="M9 17 5 20v-4"></path></svg><span class="comment-text">${esc(e.comment)}</span></div>`:''}
         ${footerHtml}
@@ -344,7 +350,7 @@ track.addEventListener('click',e=>{
     e.stopPropagation();
     selectedStageIndex=stageIndex;
     selectedEventIndex=eventIndex;
-    document.getElementById('reminderOverlay').classList.add('open');
+    openReminderEditor();
     return;
   }
 

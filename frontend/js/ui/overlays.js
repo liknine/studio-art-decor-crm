@@ -282,24 +282,6 @@ document.getElementById('advanceEventBtn').addEventListener('click',()=>{
   advanceEventToNextStage(selectedStageIndex,selectedEventIndex,true,selectedEvent()?.id||'');
 });
 
-document.getElementById('eventContactCall').addEventListener('click',e=>{
-  if(e.currentTarget.classList.contains('disabled')){
-    e.preventDefault();
-    notify('В контакте нет номера телефона');
-    return;
-  }
-  crmHaptic('soft');
-});
-
-document.getElementById('callClient').addEventListener('click',e=>{
-  if(e.currentTarget.classList.contains('disabled')){
-    e.preventDefault();
-    notify('В контакте нет номера телефона');
-    return;
-  }
-  crmHaptic('soft');
-});
-
 document.getElementById('openEstimate').addEventListener('click',()=>{renderEstimate();populateBookingPanel();showPage('estimatePage')});
 document.getElementById('openReminders').addEventListener('click',()=>{renderReminders();showPage('remindersPage')});
 document.getElementById('toggleBooking').addEventListener('click',()=>{
@@ -371,26 +353,57 @@ document.getElementById('catalogList').addEventListener('click',e=>{
 document.getElementById('customItemBtn').addEventListener('click',()=>openNewEstimateItem('custom'));
 document.getElementById('extraExpenseBtn').addEventListener('click',()=>openNewEstimateItem('expense'));
 document.querySelector('.js-close-add').addEventListener('click',()=>document.getElementById('addItemOverlay').classList.remove('open'));
-document.getElementById('addReminderBtn').addEventListener('click',()=>document.getElementById('reminderOverlay').classList.add('open'));
-document.querySelector('.js-close-reminder').addEventListener('click',()=>document.getElementById('reminderOverlay').classList.remove('open'));
+function resetReminderEditor(){
+  editingReminderId='';
+  document.getElementById('reminderOverlayTitle').textContent='Новое напоминание';
+  document.getElementById('saveReminder').textContent='Сохранить напоминание';
+  document.getElementById('newReminderText').value='';
+  document.getElementById('newReminderDate').value='';
+  document.getElementById('newReminderTime').value='';
+  document.querySelectorAll('.quick-times button').forEach(button=>button.classList.remove('active'));
+}
+function openReminderEditor(reminderId=''){
+  resetReminderEditor();
+  const reminder=eventReminders(selectedEvent()).find(item=>item.id===reminderId);
+  if(reminder){
+    editingReminderId=reminder.id;
+    document.getElementById('reminderOverlayTitle').textContent='Редактировать напоминание';
+    document.getElementById('saveReminder').textContent='Сохранить изменения';
+    document.getElementById('newReminderText').value=reminder.text||'';
+    document.getElementById('newReminderDate').value=reminder.date||'';
+    document.getElementById('newReminderTime').value=reminder.time||'';
+    document.querySelectorAll('.quick-times button').forEach(button=>{
+      button.classList.toggle('active',button.textContent.trim()===(reminder.kind||''));
+    });
+  }
+  document.getElementById('reminderOverlay').classList.add('open');
+}
+function closeReminderEditor(){
+  document.getElementById('reminderOverlay').classList.remove('open');
+  resetReminderEditor();
+}
+document.getElementById('addReminderBtn').addEventListener('click',()=>openReminderEditor());
+document.getElementById('reminderList').addEventListener('click',event=>{
+  const card=event.target.closest('[data-reminder-id]');
+  if(card)openReminderEditor(card.dataset.reminderId||'');
+});
+document.querySelector('.js-close-reminder').addEventListener('click',closeReminderEditor);
 document.getElementById('saveReminder').addEventListener('click',()=>{
   const e=selectedEvent();
   if(!e)return;
   const text=document.getElementById('newReminderText').value.trim()||'Напоминание';
   const activeQuick=document.querySelector('.quick-times button.active');
-  createEventReminder(e,{
+  const reminderDraft={
     text,
     kind:activeQuick?activeQuick.textContent.trim():'CRM-напоминание',
     date:document.getElementById('newReminderDate').value||'',
     time:document.getElementById('newReminderTime').value||''
-  });
+  };
+  if(editingReminderId)updateEventReminder(e,editingReminderId,reminderDraft);
+  else createEventReminder(e,reminderDraft);
   e.reminders=e.reminderItems.length;
   persistCRM();
-  document.getElementById('newReminderText').value='';
-  document.getElementById('newReminderDate').value='';
-  document.getElementById('newReminderTime').value='';
-  document.querySelectorAll('.quick-times button').forEach(x=>x.classList.remove('active'));
-  document.getElementById('reminderOverlay').classList.remove('open');
+  closeReminderEditor();
   renderTrack();
   renderReminders();
   populateEventPage();

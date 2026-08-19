@@ -4,6 +4,7 @@ let currentStage=0;
 let selectedStageIndex=0;
 let selectedEventIndex=0;
 let selectedProductIndex=0;
+let editingReminderId='';
 let calendarCursor=new Date(2026,7,1);
 let calendarSelectedDate='2026-08-24';
 let pointerId=null;
@@ -25,18 +26,32 @@ const toast=document.getElementById('toast');
 function esc(s=''){
   return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
+function normalizedPhoneParts(raw=''){
+  const value=String(raw||'');
+  const candidates=value.match(/(?:\+\d|\(\d|\d)[\d\s().\-–—]*\d/g)||[];
+  for(const candidateValue of candidates){
+    const display=candidateValue.trim();
+    const digits=display.replace(/\D/g,'');
+    if(digits.length<7 || digits.length>15)continue;
+    return {
+      display,
+      normalized:(display.startsWith('+')?'+':'')+digits
+    };
+  }
+  return {display:'',normalized:''};
+}
 function contactInfo(raw=''){
   const value=String(raw||'').trim();
-  const phoneMatch=value.match(/\+?\d[\d\s()-]{7,}/);
-  const phone=phoneMatch ? phoneMatch[0].trim() : '';
+  const phoneParts=normalizedPhoneParts(value);
+  const phone=phoneParts.display;
   let name=phone ? value.replace(phone,'') : value;
-  name=name.replace(/[·|,;:\-–—]+$/g,'').trim();
+  name=name.replace(/[\s·|,;:\-–—]+$/g,'').trim();
   if(!name || /^контакт не указан$/i.test(name))name='Клиент';
   const initial=(name.match(/[A-Za-zА-Яа-яЁё]/)||['К'])[0].toUpperCase();
   return {
     name,
     phone,
-    tel:phone ? 'tel:'+phone.replace(/[^+\d]/g,'') : '#',
+    tel:phoneParts.normalized ? 'tel:'+phoneParts.normalized : '',
     initial
   };
 }
