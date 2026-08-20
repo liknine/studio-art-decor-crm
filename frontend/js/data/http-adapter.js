@@ -90,6 +90,15 @@ class HttpCRMAdapter{
     this.revision=String(payload?.revision||this.revision||snapshot.updatedAt);
     return {ok:true,revision:this.revision};
   }
+  async updateRentalCapacity(productId,total){
+    const payload=await this.request('/crm/rental-capacity',{
+      method:'POST',
+      headers:this.revision?{'If-Match':this.revision}:{},
+      body:JSON.stringify({productId:String(productId||''),total:Number(total)})
+    });
+    this.revision=String(payload?.revision||this.revision||'');
+    return payload;
+  }
   async createCallLink(eventId){
     return await this.request('/crm/call-link',{
       method:'POST',

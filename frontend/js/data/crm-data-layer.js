@@ -120,6 +120,23 @@ const CRMDataLayer={
   async flush(){
     return await this.pendingSave;
   },
+  async updateRentalCapacity(productId,total){
+    if(!this.adapter || typeof this.adapter.updateRentalCapacity!=='function'){
+      const error=new Error('Rental quantity editing requires the production API');
+      error.code='FEATURE_REQUIRES_SERVER';
+      throw error;
+    }
+    await this.flush();
+    const result=await this.adapter.updateRentalCapacity(productId,total);
+    this.revision=String(result?.revision||this.revision||'');
+    const item=result?.rentalItem;
+    if(item && Array.isArray(this.rentalItems)){
+      const index=this.rentalItems.findIndex(row=>row?.id===item.id);
+      if(index>=0)this.rentalItems[index]=item;
+      else this.rentalItems.push(item);
+    }
+    return result;
+  },
   async createCallLink(eventId){
     if(!this.adapter || typeof this.adapter.createCallLink!=='function'){
       const error=new Error('Protected call handoff requires the production API');

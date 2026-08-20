@@ -9,7 +9,10 @@ function normalizedRentalProduct(source,index=0){
   if(!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(id) || !name)return null;
   const price=Number(source.price);
   const total=Math.trunc(Number(source.total));
+  const manualSource=source.manualQuantity;
+  const manualQuantity=manualSource===null||manualSource===undefined?null:Math.trunc(Number(manualSource));
   if(!Number.isFinite(price) || price<0 || !Number.isFinite(total) || total<0)return null;
+  if(manualQuantity!==null && (!Number.isFinite(manualQuantity)||manualQuantity<0||manualQuantity>100000))return null;
   return {
     id,
     externalCatalogId:String(source.externalCatalogId||''),
@@ -17,6 +20,7 @@ function normalizedRentalProduct(source,index=0){
     category:String(source.category||'Без категории').trim()||'Без категории',
     price:Math.round(price*100)/100,
     total,
+    manualQuantity,
     busy:0,
     desc:String(source.desc||'').trim(),
     catalogPosition:Number.isInteger(Number(source.catalogPosition))?Number(source.catalogPosition):index

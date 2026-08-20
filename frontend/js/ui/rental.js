@@ -72,6 +72,8 @@ function populateProductPage(){
   document.getElementById('productDescription').textContent=p.desc;
   document.getElementById('productCategory').textContent=p.category;
   document.getElementById('productPrice').textContent=p.price+' BYN / сутки';
+  const totalNode=document.getElementById('productStockTotal');
+  if(totalNode)totalNode.textContent=`${p.total} шт.`;
   const dateText=dateKey?formatShortDateKey(dateKey):'Дата не выбрана';
   document.getElementById('productAvailable').textContent=`${dateText} · свободно ${free} из ${p.total}${busy?` · занято ${busy}`:''}`;
   populateProductEstimateTarget();

@@ -163,6 +163,71 @@ async function bootstrapCRM(){
     if(crmAppRoot)crmAppRoot.inert=false;
   }
 }
+function closeRentalStockEditor(){
+  document.getElementById('rentalStockOverlay')?.classList.remove('open');
+}
+
+function openRentalStockEditor(){
+  const product=rentalProducts[selectedProductIndex];
+  if(!product)return;
+  if(CRM_DATA_CONFIG.mode!=='http'){
+    notify('Изменение количества доступно в рабочей CRM');
+    return;
+  }
+  const input=document.getElementById('rentalStockInput');
+  const name=document.getElementById('rentalStockProductName');
+  if(input)input.value=String(Math.max(0,Math.trunc(Number(product.total)||0)));
+  if(name)name.textContent=product.name;
+  document.getElementById('rentalStockOverlay')?.classList.add('open');
+  requestAnimationFrame(()=>input?.focus?.());
+}
+
+async function saveRentalStockCapacity(){
+  const product=rentalProducts[selectedProductIndex];
+  const input=document.getElementById('rentalStockInput');
+  const button=document.getElementById('saveRentalStock');
+  if(!product||!input||!button)return;
+  const total=Number(input.value);
+  if(!Number.isInteger(total)||total<0||total>100000){
+    notify('Укажите целое количество от 0 до 100000');
+    return;
+  }
+  button.disabled=true;
+  try{
+    const result=await CRMDataLayer.updateRentalCapacity(product.id,total);
+    if(result?.rentalItem){
+      if(Array.isArray(CRMDataLayer.rentalItems))applyRemoteRentalItems(CRMDataLayer.rentalItems,{allowEmpty:true});
+      else{
+        const current=rentalProducts.find(row=>row.id===product.id);
+        if(current){current.total=total;current.manualQuantity=total;}
+      }
+    }
+    renderRental();
+    populateProductPage();
+    if(typeof renderCatalog==='function')renderCatalog();
+    closeRentalStockEditor();
+    notify('Количество обновлено');
+  }catch(error){
+    if(error?.code==='REVISION_CONFLICT'){
+      await refreshCRMFromServer();
+      notify('Данные обновились. Проверьте количество и сохраните ещё раз.');
+    }else if(error?.code==='VALIDATION_ERROR' && Number.isInteger(Number(error?.details?.minimumQuantity))){
+      notify(`Уже забронировано минимум ${Number(error.details.minimumQuantity)} шт.`);
+    }else{
+      notify('Не удалось изменить количество');
+    }
+  }finally{
+    button.disabled=false;
+  }
+}
+
+document.getElementById('editProductStock')?.addEventListener('click',openRentalStockEditor);
+document.getElementById('closeRentalStock')?.addEventListener('click',closeRentalStockEditor);
+document.getElementById('saveRentalStock')?.addEventListener('click',()=>{void saveRentalStockCapacity();});
+document.getElementById('rentalStockOverlay')?.addEventListener('click',event=>{
+  if(event.target===event.currentTarget)closeRentalStockEditor();
+});
+
 bootstrapCRM();
 
 window.__CRM_CORE_V59__={

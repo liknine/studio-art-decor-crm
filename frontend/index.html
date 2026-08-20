@@ -636,6 +636,10 @@
 
       <div class="product-info">
         <div class="product-info-row"><strong>Цена аренды</strong><span id="productPrice">60 BYN / сутки</span></div>
+        <div class="product-info-row product-stock-row">
+          <strong>Всего в наличии</strong>
+          <div class="product-stock-control"><span id="productStockTotal">1 шт.</span><button type="button" id="editProductStock">Изменить</button></div>
+        </div>
         <div class="product-info-row"><strong>Доступность</strong><span id="productAvailable">24 авг · свободно 1 из 1</span></div>
       </div>
 
@@ -801,6 +805,21 @@
       <a class="primary" id="continueCallHandoff" href="" target="_blank" rel="noopener noreferrer" hidden>Продолжить звонок</a>
       <button type="button" id="copyCallNumber" disabled>Скопировать номер</button>
       <button type="button" id="cancelCallHandoff">Отмена</button>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="rentalStockOverlay">
+  <section class="sheet rental-stock-sheet">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <div class="rental-stock-head"><strong>Количество в наличии</strong><span id="rentalStockProductName"></span></div>
+      <button class="close" id="closeRentalStock" aria-label="Закрыть"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"></path></svg></button>
+    </div>
+    <div class="form rental-stock-form">
+      <label>Всего единиц<input id="rentalStockInput" type="number" min="0" max="100000" step="1" inputmode="numeric"></label>
+      <div class="mini-note">Брони вычитаются автоматически. Ежедневная синхронизация каталога не будет перезаписывать это значение.</div>
+      <button type="button" class="primary-wide" id="saveRentalStock">Сохранить количество</button>
     </div>
   </section>
 </div>
