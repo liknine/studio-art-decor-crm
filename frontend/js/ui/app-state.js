@@ -14,8 +14,9 @@ let suppressClick=false;
 let wheelLock=false;
 let rentalCategory='Все';
 let rentalQuery='';
-let stageGestureActive=false;
-let stageTransitionLockUntil=0;
+let stageScrollRaf=0;
+let stageProgrammaticTarget=null;
+let stageProgrammaticTimer=0;
 
 const frame=document.getElementById('stageFrame');
 const track=document.getElementById('stageTrack');
