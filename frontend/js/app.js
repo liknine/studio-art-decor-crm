@@ -26,48 +26,131 @@ CRMDataLayer.setErrorHandler((error,operation)=>{
 const crmAppRoot=document.querySelector('.app');
 if(crmAppRoot)crmAppRoot.inert=true;
 
+const CRM_BACKGROUND_REFRESH_MS=5000;
+let crmBackgroundRefreshTimer=0;
+let crmBackgroundRefreshBusy=false;
+
+function renderCRMCollections(){
+  renderTrack();
+  renderRental();
+  renderEstimate();
+  renderReminders();
+  renderDynamicCalendar();
+}
+
+function activeCRMPageId(){
+  return document.querySelector('.page.active')?.id||'eventsPage';
+}
+
+function applyRemoteCRMStages(nextStages){
+  const activePage=activeCRMPageId();
+  const selectedId=selectedEvent()?.id||'';
+  stages=normalizeStages(nextStages);
+  currentStage=Math.max(0,Math.min(stages.length-1,currentStage));
+
+  let location=selectedId?crmEventLocation(stages,selectedId):null;
+  if(location){
+    selectedStageIndex=location.stageIndex;
+    selectedEventIndex=location.eventIndex;
+  }else if(selectedId){
+    selectedStageIndex=currentStage;
+    selectedEventIndex=0;
+  }
+
+  renderTrack();
+  renderRental();
+  renderDynamicCalendar();
+
+  if(location){
+    if(activePage==='eventPage')populateEventPage();
+    else if(activePage==='estimatePage'){
+      populateEventPage();
+      renderEstimate();
+    }else if(activePage==='remindersPage'){
+      populateEventPage();
+      renderReminders();
+    }
+    /* editEventPage intentionally keeps typed form values. The selected event
+       indexes are refreshed by stable ID so saving still targets the same row. */
+  }else if(selectedId && ['eventPage','estimatePage','remindersPage','editEventPage'].includes(activePage)){
+    showPage('eventsPage');
+  }
+
+  const searchOverlay=document.getElementById('searchOverlay');
+  if(searchOverlay?.classList.contains('open')){
+    renderGlobalSearch(document.getElementById('globalSearchInput')?.value||'');
+  }
+}
+
+async function refreshCRMFromServer(){
+  if(CRM_DATA_CONFIG.mode!=='http' || CRMDataLayer.status!=='ready' || CRMDataLayer.dirty)return;
+  if(document.visibilityState && document.visibilityState!=='visible')return;
+  if(document.activeElement?.matches?.('input,textarea,select,[contenteditable="true"]'))return;
+  if(crmBackgroundRefreshBusy)return;
+  crmBackgroundRefreshBusy=true;
+  try{
+    const result=await CRMDataLayer.refresh(stages);
+    if(result?.changed && Array.isArray(result.stages))applyRemoteCRMStages(result.stages);
+  }finally{
+    crmBackgroundRefreshBusy=false;
+  }
+}
+
+function startCRMBackgroundRefresh(){
+  if(CRM_DATA_CONFIG.mode!=='http' || crmBackgroundRefreshTimer)return;
+  crmBackgroundRefreshTimer=window.setInterval(()=>{void refreshCRMFromServer();},CRM_BACKGROUND_REFRESH_MS);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible')void refreshCRMFromServer();
+  });
+  window.addEventListener('focus',()=>{void refreshCRMFromServer();});
+}
+
+function renderEmptyProductionState(){
+  stages=normalizeStages(stages.map(stage=>({...stage,events:[]})));
+  renderCRMCollections();
+  document.documentElement.dataset.crmLoading='false';
+}
+
 async function bootstrapCRM(){
   try{
     if(CRM_DATA_CONFIG.mode==='http'){
+      /* Never show prototype/demo customers while Telegram or the network is
+         still loading. Render the real pipeline structure with zero events. */
+      renderEmptyProductionState();
       try{
         TelegramMiniAppAuth.prepare(CRM_DATA_CONFIG);
       }catch(error){
-        stages=normalizeStages(stages.map(stage=>({...stage,events:[]})));
-        renderTrack();
-        renderRental();
-        renderEstimate();
-        renderReminders();
-        renderDynamicCalendar();
         document.documentElement.dataset.crmReady='auth-required';
         notify(telegramAuthMessage(error));
         return;
       }
+    }else{
+      document.documentElement.dataset.crmLoading='false';
     }
     try{
-      stages=await CRMDataLayer.init(stages);
+      const loadedStages=await CRMDataLayer.init(stages);
+      applyRemoteCRMStages(loadedStages);
     }catch(err){
-      /* Keep the UI available with normalized seed data. The data layer has
-         already retained and reported the adapter error. */
-      stages=normalizeStages(CRM_DATA_CONFIG.mode==='http'
-        ? stages.map(stage=>({...stage,events:[]}))
-        : stages);
+      /* HTTP mode deliberately stays empty when the server cannot be loaded.
+         Local development may continue to use its normalized seed data. */
+      if(CRM_DATA_CONFIG.mode!=='http'){
+        stages=normalizeStages(stages);
+        renderCRMCollections();
+      }
       if(CRM_DATA_CONFIG.mode==='http' && isTelegramAuthenticationError(err)){
         document.documentElement.dataset.crmReady='auth-required';
       }
     }
-    renderTrack();
-    renderRental();
-    renderEstimate();
-    renderReminders();
-    renderDynamicCalendar();
     if(document.documentElement.dataset.crmReady!=='auth-required'){
       document.documentElement.dataset.crmReady='true';
+      startCRMBackgroundRefresh();
     }
   }catch(err){
     console.error('CRM UI bootstrap failed',err);
     notify('Не удалось полностью загрузить интерфейс CRM');
     document.documentElement.dataset.crmReady='error';
   }finally{
+    document.documentElement.dataset.crmLoading='false';
     if(crmAppRoot)crmAppRoot.inert=false;
   }
 }

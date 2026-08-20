@@ -3732,3 +3732,32 @@ button.contact-pill{
     padding-left:7px !important;padding-right:7px !important
   }
 }
+
+
+/* Final acceptance: never expose prototype event cards while production data is loading. */
+html[data-crm-loading="true"] #stageTrack{
+  visibility:hidden !important;
+}
+
+/* Global search is a real modal layer: keep all matching rows reachable above fixed navigation. */
+#searchOverlay{
+  z-index:200 !important;
+}
+#searchOverlay .search-sheet-v43{
+  max-height:calc(100% - max(8px,var(--crm-safe-top))) !important;
+  overflow-y:auto !important;
+  padding-bottom:calc(22px + max(8px,var(--crm-safe-bottom))) !important;
+  overscroll-behavior:contain;
+}
+#searchOverlay .search-head-v43{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#fff;
+}
+@media(max-width:600px){
+  #searchOverlay .search-sheet-v43{
+    max-height:calc(var(--crm-usable-height,100vh) - max(8px,var(--crm-safe-top))) !important;
+    padding-bottom:calc(24px + var(--crm-bottom-nav-height,74px) + max(8px,var(--crm-safe-bottom))) !important;
+  }
+}

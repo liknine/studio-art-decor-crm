@@ -86,7 +86,7 @@ function openGlobalSearch(){
   document.querySelectorAll('[data-search-scope]').forEach(btn=>btn.classList.toggle('active',btn.dataset.searchScope==='all'));
   renderGlobalSearch('');
   document.getElementById('globalSearchInput').value='';
-  document.getElementById('searchOverlay').classList.add('open');
+  openModal(document.getElementById('searchOverlay'));
   setTimeout(()=>document.getElementById('globalSearchInput').focus(),170);
 }
 document.getElementById('searchBtn').addEventListener('click',openGlobalSearch);
@@ -97,17 +97,19 @@ document.querySelectorAll('[data-search-scope]').forEach(btn=>btn.addEventListen
 }));
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openGlobalSearch();}});
 
-document.getElementById('closeSearch').addEventListener('click',()=>document.getElementById('searchOverlay').classList.remove('open'));
+document.getElementById('closeSearch').addEventListener('click',()=>closeModal(document.getElementById('searchOverlay')));
 document.getElementById('globalSearchInput').addEventListener('input',e=>renderGlobalSearch(e.target.value));
 document.getElementById('globalSearchResults').addEventListener('click',e=>{
-  const eventRow=e.target.closest('[data-search-stage]');
+  const eventRow=e.target.closest('[data-search-event-id]');
   const productRow=e.target.closest('[data-search-product]');
 
   if(eventRow){
-    selectedStageIndex=Number(eventRow.dataset.searchStage);
-    selectedEventIndex=Number(eventRow.dataset.searchEvent);
+    const location=crmEventLocation(stages,eventRow.dataset.searchEventId||'');
+    if(!location)return;
+    selectedStageIndex=location.stageIndex;
+    selectedEventIndex=location.eventIndex;
     currentStage=selectedStageIndex;
-    document.getElementById('searchOverlay').classList.remove('open');
+    closeModal(document.getElementById('searchOverlay'));
     populateEventPage();
     showPage('eventPage');
     return;
@@ -115,7 +117,7 @@ document.getElementById('globalSearchResults').addEventListener('click',e=>{
 
   if(productRow){
     selectedProductIndex=Number(productRow.dataset.searchProduct);
-    document.getElementById('searchOverlay').classList.remove('open');
+    closeModal(document.getElementById('searchOverlay'));
     populateProductPage();
     showPage('rentalDetailPage');
   }
@@ -229,6 +231,10 @@ document.getElementById('saveEventEdit').addEventListener('click',()=>{
   }
 
   persistCRM();
+  /* Editing an event mutates the in-memory object immediately. Repaint the
+     funnel too; otherwise the card keeps its old date/time/contact until a
+     full reload or another stage render happens. */
+  renderTrack();
   populateEventPage();
   renderDynamicCalendar();
   renderRental();

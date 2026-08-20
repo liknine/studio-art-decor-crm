@@ -5,6 +5,8 @@ const CRMDataLayer={
   pendingSave:Promise.resolve(),
   dirty:false,
   lastError:null,
+  lastRefreshError:null,
+  refreshInFlight:null,
   errorHandler:null,
   saveSequence:0,
   savedSequence:0,
@@ -67,6 +69,49 @@ const CRMDataLayer={
         }
       });
     return this.pendingSave;
+  },
+  async refresh(currentStages){
+    if(!this.adapter || this.status==='idle' || this.status==='loading' || this.dirty){
+      return {changed:false,skipped:true,stages:null,revision:this.revision};
+    }
+    if(this.refreshInFlight)return await this.refreshInFlight;
+    const previousRevision=String(this.revision||'');
+    const startingSaveSequence=this.saveSequence;
+    this.refreshInFlight=(async()=>{
+      try{
+        const loaded=await this.adapter.load(currentStages);
+        /* A user save may start while the GET is in flight. Never apply that
+           older snapshot over a local mutation or over a completed newer save. */
+        if(this.dirty || this.saveSequence!==startingSaveSequence){
+          return {changed:false,skipped:true,stages:null,revision:this.revision};
+        }
+        const nextRevision=String(loaded.revision||'');
+        let changed=nextRevision!==previousRevision;
+        if(/^\d+$/.test(previousRevision) && /^\d+$/.test(nextRevision)){
+          changed=BigInt(nextRevision)>BigInt(previousRevision);
+        }
+        if(!changed){
+          this.status='ready';
+          this.lastRefreshError=null;
+          return {changed:false,skipped:false,stages:null,revision:this.revision};
+        }
+        this.revision=nextRevision;
+        this.status='ready';
+        this.lastRefreshError=null;
+        return {
+          changed:true,
+          skipped:false,
+          stages:normalizeStages(loaded.stages),
+          revision:nextRevision
+        };
+      }catch(err){
+        this.lastRefreshError=err instanceof Error?err:new Error(String(err||'CRM refresh failed'));
+        return {changed:false,skipped:false,stages:null,revision:this.revision,error:this.lastRefreshError};
+      }finally{
+        this.refreshInFlight=null;
+      }
+    })();
+    return await this.refreshInFlight;
   },
   async flush(){
     return await this.pendingSave;
