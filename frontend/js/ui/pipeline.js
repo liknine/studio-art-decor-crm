@@ -98,120 +98,91 @@ function renderStageRail(){
     </button>`).join('');
 }
 
-function syncStageRail(scrollIntoView=true){
+function syncStageRail(ensureVisible=true,behavior='smooth'){
   const rail=document.getElementById('stageRail');
   if(!rail)return;
-  [...rail.querySelectorAll('[data-stage-jump]')].forEach((chip,index)=>{
+  const chips=[...rail.querySelectorAll('[data-stage-jump]')];
+  chips.forEach((chip,index)=>{
     const active=index===currentStage;
     chip.classList.toggle('active',active);
     chip.setAttribute('aria-current',active?'step':'false');
   });
-  if(scrollIntoView){
-    const active=rail.querySelector(`[data-stage-jump="${currentStage}"]`);
-    active?.scrollIntoView({behavior:'auto',block:'nearest',inline:'center'});
+  if(!ensureVisible)return;
+  const active=rail.querySelector(`[data-stage-jump="${currentStage}"]`);
+  if(!active)return;
+  const railRect=rail.getBoundingClientRect();
+  const activeRect=active.getBoundingClientRect();
+  let delta=0;
+  if(activeRect.left<railRect.left+6)delta=activeRect.left-railRect.left-10;
+  else if(activeRect.right>railRect.right-6)delta=activeRect.right-railRect.right+10;
+  if(delta)rail.scrollBy({left:delta,behavior});
+}
+
+function renderCurrentStage(direction=0,animate=false){
+  const stage=stages[currentStage];
+  if(!stage)return;
+  track.classList.add('stage-single-page');
+  const motion=animate ? (direction>0?'stage-content-next':direction<0?'stage-content-prev':'') : '';
+  track.innerHTML=`<section class="stage-page" data-index="${currentStage}" aria-hidden="false" tabindex="0">
+    <div class="stage-page-content ${motion}">${stageHTML(stage,currentStage)}</div>
+  </section>`;
+  if(animate){
+    stageTransitionLockUntil=performance.now()+180;
+    window.setTimeout(()=>{
+      track.querySelector('.stage-page-content')?.classList.remove('stage-content-next','stage-content-prev');
+      flushPendingRemoteCRMStages();
+    },180);
   }
 }
 
 function syncStageViewport(behavior='auto'){
-  /* Status navigation is fully controlled by one state variable on every
-     platform. Native scroll-snap used to introduce a second asynchronous
-     source of truth on iOS (scrollLeft/scrollend), which could briefly move
-     the active chip back to the previous stage. */
   if(track.scrollLeft)track.scrollLeft=0;
-  syncStageRail(true);
-  positionPages(0,behavior==='smooth');
+  const shown=track.querySelector('.stage-page');
+  if(!shown || Number(shown.dataset.index)!==currentStage)renderCurrentStage(0,false);
+  syncStageRail(true,behavior==='smooth'?'smooth':'auto');
 }
 
 function goToStage(index,behavior='smooth'){
   const next=Math.max(0,Math.min(stages.length-1,Number(index)||0));
-  if(next===currentStage){syncStageRail(true);return;}
+  if(next===currentStage){
+    syncStageRail(true,behavior==='smooth'?'smooth':'auto');
+    return false;
+  }
+  const direction=next>currentStage?1:-1;
   currentStage=next;
-  syncStageViewport(behavior);
+  syncStageRail(true,behavior==='smooth'?'smooth':'auto');
+  renderCurrentStage(direction,behavior==='smooth');
   crmHaptic('selection');
+  return true;
 }
 
 function renderTrack(){
-  track.innerHTML=stages.map((stage,index)=>
-    `<section class="stage-page" data-index="${index}">
-      ${stageHTML(stage,index)}
-    </section>`
-  ).join('');
-
+  renderCurrentStage(0,false);
   renderStageRail();
-  window.requestAnimationFrame(()=>syncStageViewport('auto'));
+  window.requestAnimationFrame(()=>syncStageRail(false,'auto'));
 }
 
 function pageWidth(){
-  return Math.max(1,track.clientWidth);
+  return Math.max(1,frame.clientWidth||track.clientWidth||390);
 }
-
-function pages(){
-  return [...track.querySelectorAll('.stage-page')];
-}
-let stageMotionRaf=0;
-let pendingStageOffset=0;
 
 function stageSwipeTarget(originStage,dx,width=pageWidth()){
-  const threshold=Math.min(70,Math.max(48,width*.16));
+  const threshold=Math.min(72,Math.max(44,width*.13));
   if(Math.abs(dx)<threshold)return originStage;
   return Math.max(0,Math.min(stages.length-1,originStage+(dx<0?1:-1)));
 }
 
-function scheduleStagePosition(offset){
-  pendingStageOffset=offset;
-  if(stageMotionRaf)return;
-
-  stageMotionRaf=requestAnimationFrame(()=>{
-    stageMotionRaf=0;
-    positionPages(pendingStageOffset,false);
-  });
-}
-
-function cancelScheduledStagePosition(){
-  if(stageMotionRaf){
-    cancelAnimationFrame(stageMotionRaf);
-    stageMotionRaf=0;
-  }
-}
-
-
-function positionPages(dragOffset=0,animate=false){
-  const w=pageWidth();
-  const duration=animate?'280ms':'0ms';
-
-  pages().forEach((page,index)=>{
-    const x=(index-currentStage)*w+dragOffset;
-    const active=index===currentStage;
-
-    page.style.setProperty('--stage-x',x+'px');
-    page.style.setProperty('--stage-duration',duration);
-    page.style.setProperty('--stage-pe',active?'auto':'none');
-    page.setAttribute('aria-hidden',active?'false':'true');
-    page.tabIndex=active?0:-1;
-  });
-
-  if(animate){
-    stageTransitionLockUntil=performance.now()+320;
-    window.setTimeout(()=>{
-      pages().forEach(page=>page.style.setProperty('--stage-duration','0ms'));
-      flushPendingRemoteCRMStages();
-    },320);
-  }
-  if(!dragging && !touchHorizontal)syncStageRail(false);
+/* Compatibility entry point used by existing page/view code. There is now one
+   visible stage DOM subtree, so there is no carousel position to reconcile. */
+function positionPages(){
+  const shown=track.querySelector('.stage-page');
+  if(!shown || Number(shown.dataset.index)!==currentStage)renderCurrentStage(0,false);
+  syncStageRail(false,'auto');
 }
 
 function changeStage(dir){
   const next=currentStage+dir;
-
-  if(next<0 || next>=stages.length){
-    const edge=dir>0 ? -10 : 10;
-    if(!nativeMobile){
-      positionPages(edge,true);
-      window.setTimeout(()=>positionPages(0,true),110);
-    }
-    return;
-  }
-
+  if(next<0 || next>=stages.length)return;
   goToStage(next,'smooth');
 }
 
@@ -338,21 +309,27 @@ track.addEventListener('click',e=>{
   }
 });
 
-/* Desktop mouse / pen drag. */
+/* Deterministic stage gestures.
+   A swipe commits exactly once as soon as it crosses the threshold. The same
+   goToStage() function is used by chips, touch, mouse/pen, wheel and keyboard,
+   so the rail highlight and visible stage change in the same synchronous turn. */
 let gestureStarted=false;
+let gestureOriginStage=0;
+let gestureCommitted=false;
 
 frame.addEventListener('pointerdown',e=>{
   if(e.pointerType==='touch')return;
   if(e.pointerType==='mouse' && e.button!==0)return;
   if(e.target.closest('button,input,textarea,select,a'))return;
-
   pointerId=e.pointerId;
   dragStartX=e.clientX;
   dragStartY=e.clientY;
   dragDx=0;
   dragDy=0;
-  dragging=false;
+  gestureOriginStage=currentStage;
+  gestureCommitted=false;
   gestureStarted=true;
+  dragging=false;
   stageGestureActive=true;
   suppressClick=false;
 });
@@ -360,97 +337,33 @@ frame.addEventListener('pointerdown',e=>{
 frame.addEventListener('pointermove',e=>{
   if(e.pointerType==='touch')return;
   if(!gestureStarted || e.pointerId!==pointerId)return;
-
   dragDx=e.clientX-dragStartX;
   dragDy=e.clientY-dragStartY;
-
-  const horizontal=
-    Math.abs(dragDx)>8 &&
-    Math.abs(dragDx)>Math.abs(dragDy)*1.15;
-
-  if(!dragging && horizontal){
-    dragging=true;
-    frame.classList.add('dragging');
-
-    try{frame.setPointerCapture(pointerId)}catch(_){}
-  }
-
-  if(!dragging)return;
-
+  const horizontal=Math.abs(dragDx)>9 && Math.abs(dragDx)>Math.abs(dragDy)*1.15;
+  if(!horizontal)return;
+  dragging=true;
   e.preventDefault();
-
-  let dx=dragDx*.94;
-
-  if(
-    (currentStage===0 && dx>0) ||
-    (currentStage===stages.length-1 && dx<0)
-  ){
-    dx*=.18;
-  }
-
-  scheduleStagePosition(dx);
+  if(gestureCommitted)return;
+  const target=stageSwipeTarget(gestureOriginStage,dragDx,pageWidth());
+  if(target===gestureOriginStage)return;
+  gestureCommitted=true;
+  suppressClick=true;
+  goToStage(target,'smooth');
 });
 
-function finishPointerDrag(e){
+function finishPointerDrag(){
   if(!gestureStarted)return;
-
   gestureStarted=false;
-
-  if(dragging){
-    frame.classList.remove('dragging');
-    try{
-      if(pointerId!==null)frame.releasePointerCapture(pointerId);
-    }catch(_){}
-  }
-
   pointerId=null;
-
-  const horizontal=
-    Math.abs(dragDx)>Math.abs(dragDy)*1.05;
-
-  if(Math.abs(dragDx)>9){
-    suppressClick=true;
-    window.setTimeout(()=>suppressClick=false,250);
-  }
-
-  if(dragging && horizontal){
-    const threshold=Math.min(76,pageWidth()*.20);
-
-    if(Math.abs(dragDx)>=threshold){
-      currentStage=Math.max(
-        0,
-        Math.min(
-          stages.length-1,
-          currentStage+(dragDx<0?1:-1)
-        )
-      );
-      syncStageRail(true);
-      crmHaptic('selection');
-    }
-
-    cancelScheduledStagePosition();
-    positionPages(0,true);
-  }
-
   stageGestureActive=false;
   dragging=false;
   dragDx=0;
   dragDy=0;
-  syncStageRail(true);
-  flushPendingRemoteCRMStages();
+  window.setTimeout(()=>{suppressClick=false;flushPendingRemoteCRMStages();},190);
 }
-
 frame.addEventListener('pointerup',finishPointerDrag);
 frame.addEventListener('pointercancel',finishPointerDrag);
 
-/*
-  iPhone/iPad status gesture:
-  - one controlled transform engine is the only source of stage truth;
-  - the active top chip is latched as soon as the swipe clearly commits;
-  - native horizontal scroll-snap is deliberately not involved, so there is
-    no delayed scrollend callback that can revert the status after release;
-  - vertical movement remains native inside the current .stage-page.
-*/
 let touchActive=false;
 let touchHorizontal=false;
 let touchStartX=0;
@@ -458,15 +371,12 @@ let touchStartY=0;
 let touchDx=0;
 let touchDy=0;
 let touchOriginStage=0;
-let touchPreviewStage=0;
-let touchStageLatched=false;
+let touchStageCommitted=false;
 
 frame.addEventListener('touchstart',e=>{
   if(e.touches.length!==1)return;
   if(e.target.closest('button,input,textarea,select,a'))return;
-
   const t=e.touches[0];
-
   touchActive=true;
   touchHorizontal=false;
   touchStartX=t.clientX;
@@ -474,138 +384,63 @@ frame.addEventListener('touchstart',e=>{
   touchDx=0;
   touchDy=0;
   touchOriginStage=currentStage;
-  touchPreviewStage=currentStage;
-  touchStageLatched=false;
+  touchStageCommitted=false;
   stageGestureActive=true;
   suppressClick=false;
 },{passive:true});
 
 frame.addEventListener('touchmove',e=>{
   if(!touchActive || e.touches.length!==1)return;
-
   const t=e.touches[0];
   touchDx=t.clientX-touchStartX;
   touchDy=t.clientY-touchStartY;
-
   if(!touchHorizontal){
-    if(
-      Math.abs(touchDx)>9 &&
-      Math.abs(touchDx)>Math.abs(touchDy)*1.15
-    ){
-      touchHorizontal=true;
-    }else if(
-      Math.abs(touchDy)>10 &&
-      Math.abs(touchDy)>Math.abs(touchDx)
-    ){
-      return;
-    }
+    if(Math.abs(touchDx)>9 && Math.abs(touchDx)>Math.abs(touchDy)*1.15)touchHorizontal=true;
+    else if(Math.abs(touchDy)>10 && Math.abs(touchDy)>Math.abs(touchDx))return;
   }
-
   if(!touchHorizontal)return;
-
   e.preventDefault();
-
-  let dx=touchDx*.94;
-
-  if(
-    (touchOriginStage===0 && dx>0) ||
-    (touchOriginStage===stages.length-1 && dx<0)
-  ){
-    dx*=.18;
-  }
-
-  scheduleStagePosition(dx);
-
-  /* Latch once per gesture. After the user has clearly swiped toward the next
-     stage, transient finger jitter can no longer send the top rail backwards. */
-  if(!touchStageLatched){
-    const candidate=stageSwipeTarget(touchOriginStage,touchDx,pageWidth());
-    if(candidate!==touchOriginStage){
-      touchPreviewStage=candidate;
-      touchStageLatched=true;
-      currentStage=candidate;
-      syncStageRail(true);
-      crmHaptic('selection');
-      /* Keep rendering offsets relative to the original page until release. */
-      currentStage=touchOriginStage;
-    }
-  }
+  if(touchStageCommitted)return;
+  const target=stageSwipeTarget(touchOriginStage,touchDx,pageWidth());
+  if(target===touchOriginStage)return;
+  touchStageCommitted=true;
+  suppressClick=true;
+  goToStage(target,'smooth');
 },{passive:false});
 
 function finishTouchSwipe(){
   if(!touchActive)return;
-
   touchActive=false;
-
-  if(!touchHorizontal){
-    stageGestureActive=false;
-    touchDx=0;
-    touchDy=0;
-    flushPendingRemoteCRMStages();
-    return;
-  }
-
-  suppressClick=true;
-  cancelScheduledStagePosition();
-
-  if(touchStageLatched){
-    currentStage=touchPreviewStage;
-    syncStageRail(true);
-  }else{
-    currentStage=touchOriginStage;
-    syncStageRail(false);
-  }
-
-  positionPages(0,true);
   stageGestureActive=false;
-
-  window.setTimeout(()=>{
-    suppressClick=false;
-    flushPendingRemoteCRMStages();
-  },330);
-
   touchHorizontal=false;
-  touchStageLatched=false;
   touchDx=0;
   touchDy=0;
+  window.setTimeout(()=>{suppressClick=false;flushPendingRemoteCRMStages();},190);
 }
-
 frame.addEventListener('touchend',finishTouchSwipe,{passive:true});
 frame.addEventListener('touchcancel',finishTouchSwipe,{passive:true});
 
 /* Horizontal trackpad gesture. */
 frame.addEventListener('wheel',e=>{
   if(wheelLock)return;
-
-  const horizontal=
-    Math.abs(e.deltaX)>Math.abs(e.deltaY) &&
-    Math.abs(e.deltaX)>24;
-
-  const shifted=
-    e.shiftKey &&
-    Math.abs(e.deltaY)>24;
-
+  const horizontal=Math.abs(e.deltaX)>Math.abs(e.deltaY) && Math.abs(e.deltaX)>24;
+  const shifted=e.shiftKey && Math.abs(e.deltaY)>24;
   if(horizontal || shifted){
     e.preventDefault();
     wheelLock=true;
     changeStage((horizontal?e.deltaX:e.deltaY)>0 ? 1 : -1);
-    window.setTimeout(()=>wheelLock=false,460);
+    window.setTimeout(()=>wheelLock=false,220);
   }
 },{passive:false});
 
 /* Keyboard fallback on desktop. */
 document.addEventListener('keydown',e=>{
-  if(
-    document.activeElement &&
-    /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)
-  ) return;
-
+  if(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
   if(!document.getElementById('eventsPage').classList.contains('active'))return;
-
   if(e.key==='ArrowRight')changeStage(1);
   if(e.key==='ArrowLeft')changeStage(-1);
 });
 
 window.addEventListener('resize',()=>{
-  window.requestAnimationFrame(()=>positionPages(0,false));
+  window.requestAnimationFrame(()=>syncStageViewport('auto'));
 });

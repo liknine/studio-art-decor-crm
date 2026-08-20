@@ -3870,3 +3870,49 @@ html[data-crm-loading="true"] #stageTrack{
     transition:background 150ms ease,border-color 150ms ease,color 150ms ease,transform 100ms ease,box-shadow 150ms ease !important;
   }
 }
+
+/* ============================================================
+   v62 — no-flicker stage navigation
+   A single visible stage subtree replaces the multi-layer transform carousel.
+   Status taps and swipe commits therefore cannot expose two competing stage
+   pages or flash a blank compositor layer on iOS.
+   ============================================================ */
+.stage-track.stage-single-page{
+  overflow:hidden !important;
+  contain:layout paint style !important;
+  scroll-snap-type:none !important;
+}
+.stage-track.stage-single-page .stage-page{
+  --stage-x:0px !important;
+  --stage-duration:0ms !important;
+  --stage-pe:auto !important;
+  position:absolute !important;
+  inset:0 !important;
+  transform:none !important;
+  transition:none !important;
+  pointer-events:auto !important;
+}
+.stage-page-content{
+  width:100%;
+  min-height:100%;
+  will-change:transform;
+  backface-visibility:hidden;
+}
+.stage-page-content.stage-content-next{
+  animation:stageContentNext 160ms cubic-bezier(.20,.82,.25,1) both;
+}
+.stage-page-content.stage-content-prev{
+  animation:stageContentPrev 160ms cubic-bezier(.20,.82,.25,1) both;
+}
+@keyframes stageContentNext{
+  from{transform:translate3d(10px,0,0)}
+  to{transform:translate3d(0,0,0)}
+}
+@keyframes stageContentPrev{
+  from{transform:translate3d(-10px,0,0)}
+  to{transform:translate3d(0,0,0)}
+}
+@media (prefers-reduced-motion:reduce){
+  .stage-page-content.stage-content-next,
+  .stage-page-content.stage-content-prev{animation:none !important}
+}
