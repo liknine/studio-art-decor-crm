@@ -3630,6 +3630,12 @@ button,a,.card.clickable,.stage-chip,.tool{touch-action:manipulation;-webkit-tap
 }
 
 /* Mobile functional hotfix: real modal layering and bounded sheet geometry. */
+/* Estimate editor is a real modal too: keep its action above fixed navigation. */
+#estimateEditOverlay{
+  z-index:200 !important;
+  isolation:isolate;
+}
+
 /* Cancel-event confirmation must stay above fixed navigation on every viewport. */
 #cancelEventOverlay{
   z-index:200 !important;
