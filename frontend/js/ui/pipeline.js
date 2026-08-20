@@ -112,35 +112,14 @@ function syncStageRail(scrollIntoView=true){
   }
 }
 
-function clearStageProgrammaticSync(){
-  if(stageProgrammaticTimer){clearTimeout(stageProgrammaticTimer);stageProgrammaticTimer=0;}
-  stageProgrammaticTarget=null;
-}
 function syncStageViewport(behavior='auto'){
-  if(nativeMobile){
-    const target=currentStage*pageWidth();
-    stageProgrammaticTarget=currentStage;
-    if(stageProgrammaticTimer)clearTimeout(stageProgrammaticTimer);
-    if(behavior==='smooth'){
-      track.scrollTo({left:target,behavior:'smooth'});
-      stageProgrammaticTimer=window.setTimeout(()=>{
-        track.scrollLeft=target;
-        stageProgrammaticTarget=null;
-        stageProgrammaticTimer=0;
-        syncStageRail(true);
-      },520);
-    }else{
-      track.scrollLeft=target;
-      stageProgrammaticTimer=window.setTimeout(()=>{
-        stageProgrammaticTarget=null;
-        stageProgrammaticTimer=0;
-        syncStageRail(true);
-      },80);
-    }
-  }else{
-    positionPages(0,behavior==='smooth');
-  }
+  /* Status navigation is fully controlled by one state variable on every
+     platform. Native scroll-snap used to introduce a second asynchronous
+     source of truth on iOS (scrollLeft/scrollend), which could briefly move
+     the active chip back to the previous stage. */
+  if(track.scrollLeft)track.scrollLeft=0;
   syncStageRail(true);
+  positionPages(0,behavior==='smooth');
 }
 
 function goToStage(index,behavior='smooth'){
@@ -171,40 +150,11 @@ function pages(){
 }
 let stageMotionRaf=0;
 let pendingStageOffset=0;
-let stageNativeSettleTimer=0;
 
-function scheduleNativeStageSettle(delay=110){
-  if(!nativeMobile)return;
-  if(stageNativeSettleTimer)window.clearTimeout(stageNativeSettleTimer);
-  stageNativeSettleTimer=window.setTimeout(()=>{
-    stageNativeSettleTimer=0;
-    const width=pageWidth();
-
-    /* A programmatic chip jump owns the active state until the native smooth
-       scroll actually reaches its target. Safari may emit an early scrollend;
-       never let that transient position flip the rail back to the old stage. */
-    if(stageProgrammaticTarget!==null){
-      const targetLeft=stageProgrammaticTarget*width;
-      if(Math.abs(track.scrollLeft-targetLeft)>2)return;
-      currentStage=stageProgrammaticTarget;
-      clearStageProgrammaticSync();
-      syncStageRail(true);
-      return;
-    }
-
-    /* User swipes settle first, then update the chip exactly once. Reading
-       Math.round() on every scroll frame caused old -> new -> old -> new
-       flicker while iOS scroll-snap was still decelerating. */
-    const idx=Math.round(track.scrollLeft/width);
-    const clamped=Math.max(0,Math.min(stages.length-1,idx));
-    if(clamped!==currentStage){
-      currentStage=clamped;
-      syncStageRail(true);
-      crmHaptic('selection');
-    }else{
-      syncStageRail(false);
-    }
-  },delay);
+function stageSwipeTarget(originStage,dx,width=pageWidth()){
+  const threshold=Math.min(70,Math.max(48,width*.16));
+  if(Math.abs(dx)<threshold)return originStage;
+  return Math.max(0,Math.min(stages.length-1,originStage+(dx<0?1:-1)));
 }
 
 function scheduleStagePosition(offset){
@@ -227,7 +177,7 @@ function cancelScheduledStagePosition(){
 
 function positionPages(dragOffset=0,animate=false){
   const w=pageWidth();
-  const duration=animate?'440ms':'0ms';
+  const duration=animate?'280ms':'0ms';
 
   pages().forEach((page,index)=>{
     const x=(index-currentStage)*w+dragOffset;
@@ -241,11 +191,13 @@ function positionPages(dragOffset=0,animate=false){
   });
 
   if(animate){
+    stageTransitionLockUntil=performance.now()+320;
     window.setTimeout(()=>{
       pages().forEach(page=>page.style.setProperty('--stage-duration','0ms'));
-    },470);
+      flushPendingRemoteCRMStages();
+    },320);
   }
-  if(!dragging)syncStageRail(false);
+  if(!dragging && !touchHorizontal)syncStageRail(false);
 }
 
 function changeStage(dir){
@@ -268,24 +220,6 @@ document.getElementById('stageRail').addEventListener('click',e=>{
   if(!chip)return;
   goToStage(Number(chip.dataset.stageJump),'smooth');
 });
-
-track.addEventListener('scroll',()=>{
-  if(!nativeMobile)return;
-  cancelAnimationFrame(stageScrollRaf);
-  stageScrollRaf=requestAnimationFrame(()=>{
-    /* Keep the chip stable while native momentum / scroll-snap is moving.
-       One debounced settle owns the final selection. */
-    scheduleNativeStageSettle(110);
-  });
-},{passive:true});
-if('onscrollend' in window){
-  track.addEventListener('scrollend',()=>{
-    if(!nativeMobile)return;
-    /* Safari can fire scrollend before a programmatic snap has fully landed.
-       Debounce it instead of committing the transient index immediately. */
-    scheduleNativeStageSettle(80);
-  });
-}
 
 function stageActionName(name=''){
   const compact={
@@ -419,6 +353,7 @@ frame.addEventListener('pointerdown',e=>{
   dragDy=0;
   dragging=false;
   gestureStarted=true;
+  stageGestureActive=true;
   suppressClick=false;
 });
 
@@ -489,25 +424,32 @@ function finishPointerDrag(e){
           currentStage+(dragDx<0?1:-1)
         )
       );
+      syncStageRail(true);
+      crmHaptic('selection');
     }
 
     cancelScheduledStagePosition();
     positionPages(0,true);
   }
 
+  stageGestureActive=false;
   dragging=false;
   dragDx=0;
   dragDy=0;
   syncStageRail(true);
+  flushPendingRemoteCRMStages();
 }
 
 frame.addEventListener('pointerup',finishPointerDrag);
 frame.addEventListener('pointercancel',finishPointerDrag);
 
 /*
-  iPhone/iPad:
-  - vertical gesture is never prevented -> event list scrolls normally;
-  - only a clearly horizontal gesture becomes a status swipe.
+  iPhone/iPad status gesture:
+  - one controlled transform engine is the only source of stage truth;
+  - the active top chip is latched as soon as the swipe clearly commits;
+  - native horizontal scroll-snap is deliberately not involved, so there is
+    no delayed scrollend callback that can revert the status after release;
+  - vertical movement remains native inside the current .stage-page.
 */
 let touchActive=false;
 let touchHorizontal=false;
@@ -515,9 +457,11 @@ let touchStartX=0;
 let touchStartY=0;
 let touchDx=0;
 let touchDy=0;
+let touchOriginStage=0;
+let touchPreviewStage=0;
+let touchStageLatched=false;
 
 frame.addEventListener('touchstart',e=>{
-  if(nativeMobile)return;
   if(e.touches.length!==1)return;
   if(e.target.closest('button,input,textarea,select,a'))return;
 
@@ -529,11 +473,14 @@ frame.addEventListener('touchstart',e=>{
   touchStartY=t.clientY;
   touchDx=0;
   touchDy=0;
+  touchOriginStage=currentStage;
+  touchPreviewStage=currentStage;
+  touchStageLatched=false;
+  stageGestureActive=true;
   suppressClick=false;
 },{passive:true});
 
 frame.addEventListener('touchmove',e=>{
-  if(nativeMobile)return;
   if(!touchActive || e.touches.length!==1)return;
 
   const t=e.touches[0];
@@ -550,7 +497,6 @@ frame.addEventListener('touchmove',e=>{
       Math.abs(touchDy)>10 &&
       Math.abs(touchDy)>Math.abs(touchDx)
     ){
-      /* Vertical scroll belongs to .stage-page. */
       return;
     }
   }
@@ -562,46 +508,64 @@ frame.addEventListener('touchmove',e=>{
   let dx=touchDx*.94;
 
   if(
-    (currentStage===0 && dx>0) ||
-    (currentStage===stages.length-1 && dx<0)
+    (touchOriginStage===0 && dx>0) ||
+    (touchOriginStage===stages.length-1 && dx<0)
   ){
     dx*=.18;
   }
 
   scheduleStagePosition(dx);
+
+  /* Latch once per gesture. After the user has clearly swiped toward the next
+     stage, transient finger jitter can no longer send the top rail backwards. */
+  if(!touchStageLatched){
+    const candidate=stageSwipeTarget(touchOriginStage,touchDx,pageWidth());
+    if(candidate!==touchOriginStage){
+      touchPreviewStage=candidate;
+      touchStageLatched=true;
+      currentStage=candidate;
+      syncStageRail(true);
+      crmHaptic('selection');
+      /* Keep rendering offsets relative to the original page until release. */
+      currentStage=touchOriginStage;
+    }
+  }
 },{passive:false});
 
 function finishTouchSwipe(){
-  if(nativeMobile)return;
   if(!touchActive)return;
 
   touchActive=false;
 
   if(!touchHorizontal){
+    stageGestureActive=false;
     touchDx=0;
     touchDy=0;
+    flushPendingRemoteCRMStages();
     return;
-  }
-
-  const threshold=Math.min(70,pageWidth()*.18);
-
-  if(Math.abs(touchDx)>=threshold){
-    currentStage=Math.max(
-      0,
-      Math.min(
-        stages.length-1,
-        currentStage+(touchDx<0?1:-1)
-      )
-    );
   }
 
   suppressClick=true;
   cancelScheduledStagePosition();
-  positionPages(0,true);
 
-  window.setTimeout(()=>suppressClick=false,330);
+  if(touchStageLatched){
+    currentStage=touchPreviewStage;
+    syncStageRail(true);
+  }else{
+    currentStage=touchOriginStage;
+    syncStageRail(false);
+  }
+
+  positionPages(0,true);
+  stageGestureActive=false;
+
+  window.setTimeout(()=>{
+    suppressClick=false;
+    flushPendingRemoteCRMStages();
+  },330);
 
   touchHorizontal=false;
+  touchStageLatched=false;
   touchDx=0;
   touchDy=0;
 }

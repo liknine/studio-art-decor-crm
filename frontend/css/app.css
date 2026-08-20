@@ -3811,3 +3811,62 @@ html[data-crm-loading="true"] #stageTrack{
     bottom:96px !important;
   }
 }
+
+/* ============================================================
+   v61 — deterministic stage sync on Telegram/iPhone.
+   One controlled transform engine owns both the visible stage and the
+   highlighted rail chip. Native horizontal scroll-snap is intentionally
+   disabled because WebKit scroll momentum/scrollend could report a stale
+   intermediate page and visually bounce the status backwards.
+   ============================================================ */
+@media (max-width:600px){
+  .stage-frame{
+    overflow:hidden !important;
+    touch-action:pan-y !important;
+  }
+  .stage-track{
+    position:relative !important;
+    display:block !important;
+    width:100% !important;
+    min-width:100% !important;
+    max-width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    overflow:hidden !important;
+    scroll-snap-type:none !important;
+    scroll-behavior:auto !important;
+    -webkit-overflow-scrolling:auto !important;
+    overscroll-behavior:none !important;
+    contain:layout paint style !important;
+    touch-action:pan-y !important;
+  }
+  .stage-page{
+    position:absolute !important;
+    inset:0 !important;
+    display:block !important;
+    flex:none !important;
+    width:100% !important;
+    min-width:100% !important;
+    max-width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    transform:translate3d(var(--stage-x),0,0) !important;
+    transition:transform var(--stage-duration) cubic-bezier(.20,.82,.25,1) !important;
+    pointer-events:var(--stage-pe) !important;
+    scroll-snap-align:none !important;
+    scroll-snap-stop:normal !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-x:none !important;
+    overscroll-behavior-y:contain !important;
+    backface-visibility:hidden !important;
+    will-change:transform !important;
+    touch-action:pan-y !important;
+  }
+  .stage-chip{
+    transition:background 150ms ease,border-color 150ms ease,color 150ms ease,transform 100ms ease,box-shadow 150ms ease !important;
+  }
+}
