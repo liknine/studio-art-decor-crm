@@ -171,6 +171,41 @@ function pages(){
 }
 let stageMotionRaf=0;
 let pendingStageOffset=0;
+let stageNativeSettleTimer=0;
+
+function scheduleNativeStageSettle(delay=110){
+  if(!nativeMobile)return;
+  if(stageNativeSettleTimer)window.clearTimeout(stageNativeSettleTimer);
+  stageNativeSettleTimer=window.setTimeout(()=>{
+    stageNativeSettleTimer=0;
+    const width=pageWidth();
+
+    /* A programmatic chip jump owns the active state until the native smooth
+       scroll actually reaches its target. Safari may emit an early scrollend;
+       never let that transient position flip the rail back to the old stage. */
+    if(stageProgrammaticTarget!==null){
+      const targetLeft=stageProgrammaticTarget*width;
+      if(Math.abs(track.scrollLeft-targetLeft)>2)return;
+      currentStage=stageProgrammaticTarget;
+      clearStageProgrammaticSync();
+      syncStageRail(true);
+      return;
+    }
+
+    /* User swipes settle first, then update the chip exactly once. Reading
+       Math.round() on every scroll frame caused old -> new -> old -> new
+       flicker while iOS scroll-snap was still decelerating. */
+    const idx=Math.round(track.scrollLeft/width);
+    const clamped=Math.max(0,Math.min(stages.length-1,idx));
+    if(clamped!==currentStage){
+      currentStage=clamped;
+      syncStageRail(true);
+      crmHaptic('selection');
+    }else{
+      syncStageRail(false);
+    }
+  },delay);
+}
 
 function scheduleStagePosition(offset){
   pendingStageOffset=offset;
@@ -238,30 +273,17 @@ track.addEventListener('scroll',()=>{
   if(!nativeMobile)return;
   cancelAnimationFrame(stageScrollRaf);
   stageScrollRaf=requestAnimationFrame(()=>{
-    if(stageProgrammaticTarget!==null){
-      const targetLeft=stageProgrammaticTarget*pageWidth();
-      if(Math.abs(track.scrollLeft-targetLeft)<=2){
-        currentStage=stageProgrammaticTarget;
-        clearStageProgrammaticSync();
-        syncStageRail(true);
-      }
-      return;
-    }
-    const idx=Math.round(track.scrollLeft/pageWidth());
-    const clamped=Math.max(0,Math.min(stages.length-1,idx));
-    if(clamped!==currentStage){
-      currentStage=clamped;
-      syncStageRail(true);
-    }
+    /* Keep the chip stable while native momentum / scroll-snap is moving.
+       One debounced settle owns the final selection. */
+    scheduleNativeStageSettle(110);
   });
 },{passive:true});
 if('onscrollend' in window){
   track.addEventListener('scrollend',()=>{
     if(!nativeMobile)return;
-    const idx=Math.round(track.scrollLeft/pageWidth());
-    currentStage=Math.max(0,Math.min(stages.length-1,idx));
-    clearStageProgrammaticSync();
-    syncStageRail(true);
+    /* Safari can fire scrollend before a programmatic snap has fully landed.
+       Debounce it instead of committing the transient index immediately. */
+    scheduleNativeStageSettle(80);
   });
 }
 
