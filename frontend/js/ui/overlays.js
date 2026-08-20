@@ -121,15 +121,15 @@ document.getElementById('globalSearchResults').addEventListener('click',e=>{
   }
 });
 
-document.getElementById('cancelEventBtn').addEventListener('click',()=>document.getElementById('cancelEventOverlay').classList.add('open'));
-document.getElementById('closeCancelEvent').addEventListener('click',()=>document.getElementById('cancelEventOverlay').classList.remove('open'));
-document.getElementById('keepEventBtn').addEventListener('click',()=>document.getElementById('cancelEventOverlay').classList.remove('open'));
+document.getElementById('cancelEventBtn').addEventListener('click',()=>openModal(document.getElementById('cancelEventOverlay')));
+document.getElementById('closeCancelEvent').addEventListener('click',()=>closeModal(document.getElementById('cancelEventOverlay')));
+document.getElementById('keepEventBtn').addEventListener('click',()=>closeModal(document.getElementById('cancelEventOverlay')));
 document.getElementById('confirmCancelEvent').addEventListener('click',()=>{
   const event=selectedEvent();
   if(!event || !deleteCRMEvent(stages,event.id))return;
   persistCRM();
   selectedEventIndex=0;
-  document.getElementById('cancelEventOverlay').classList.remove('open');
+  closeModal(document.getElementById('cancelEventOverlay'));
   renderTrack();
   renderDynamicCalendar();
   openFunnelHome(false);

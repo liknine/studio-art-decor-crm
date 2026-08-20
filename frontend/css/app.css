@@ -3630,6 +3630,22 @@ button,a,.card.clickable,.stage-chip,.tool{touch-action:manipulation;-webkit-tap
 }
 
 /* Mobile functional hotfix: real modal layering and bounded sheet geometry. */
+/* Cancel-event confirmation must stay above fixed navigation on every viewport. */
+#cancelEventOverlay{
+  z-index:200 !important;
+  isolation:isolate;
+}
+#cancelEventOverlay .sheet{
+  position:relative;
+  z-index:1;
+  max-height:calc(100% - 8px) !important;
+  min-height:0;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  padding-bottom:20px !important;
+  overscroll-behavior-y:contain !important;
+}
+
 .event-contact-call,
 button.contact-pill{
   margin:0;padding:0;border:0;background:transparent;font:inherit;text-align:left
@@ -3652,6 +3668,18 @@ button.contact-pill{
 .pdf-action-list [hidden]{display:none !important}
 
 @media (max-width:600px){
+  #cancelEventOverlay{
+    padding-top:max(8px,var(--crm-safe-top));
+    background:rgba(17,18,20,.24) !important;
+    backdrop-filter:blur(7px) !important;
+    -webkit-backdrop-filter:blur(7px) !important;
+  }
+  #cancelEventOverlay .sheet{
+    max-height:calc(100% - max(8px,var(--crm-safe-top))) !important;
+    padding-bottom:calc(18px + var(--crm-safe-bottom)) !important;
+    scroll-padding-bottom:calc(18px + var(--crm-safe-bottom));
+    -webkit-overflow-scrolling:touch;
+  }
   #reminderOverlay{
     z-index:200 !important;
     isolation:isolate;
