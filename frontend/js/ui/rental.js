@@ -81,7 +81,7 @@ function populateProductPage(){
 
 function renderCatalog(){
   const event=selectedEvent();
-  document.getElementById('catalogList').innerHTML=rentalProducts.slice(0,8).map((p,i)=>{
+  document.getElementById('catalogList').innerHTML=rentalProducts.map((p,i)=>{
     const availability=event?maxReservableForEvent(p,event):{max:Math.max(0,p.total-reservedQuantity(p.id,rentalDateKey()))};
     const available=availability.max>0;
     return `<button type="button" class="catalog-row ${available?'available':'unavailable'}" data-catalog-add="${i}" ${available?'':'disabled'}>

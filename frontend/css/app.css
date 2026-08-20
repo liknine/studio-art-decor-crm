@@ -3833,3 +3833,26 @@ html[data-crm-loading="true"] #stageTrack{
 @media (max-width:600px){
   #rentalStockOverlay .rental-stock-sheet{max-height:calc(var(--crm-visual-h) - var(--crm-safe-top) - var(--crm-bottom-h) - 10px)}
 }
+
+
+/* Estimate catalog acceptance fix: use the full synchronized catalog and keep special actions reachable. */
+#addItemOverlay{
+  z-index:205 !important;
+  isolation:isolate;
+}
+#addItemOverlay .sheet{
+  position:relative;
+  z-index:1;
+  max-height:calc(100% - max(8px,var(--crm-safe-top))) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior-y:contain !important;
+  scroll-padding-bottom:28px;
+  padding-bottom:calc(24px + max(8px,var(--crm-safe-bottom))) !important;
+}
+@media(max-width:600px){
+  #addItemOverlay .sheet{
+    max-height:calc(var(--crm-visual-h) - var(--crm-safe-top) - 8px) !important;
+    padding-bottom:calc(28px + max(8px,var(--crm-safe-bottom))) !important;
+  }
+}
