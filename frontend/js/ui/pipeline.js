@@ -90,7 +90,7 @@ function stageHTML(stage,index){
 function renderStageRail(){
   const rail=document.getElementById('stageRail');
   if(!rail)return;
-  rail.innerHTML=`<span class="stage-rail-indicator" aria-hidden="true"></span>`+stages.map((stage,index)=>`
+  rail.innerHTML=stages.map((stage,index)=>`
     <button class="stage-chip ${index===currentStage?'active':''}" data-stage-jump="${index}" title="${esc(stage.name)}">
       <span class="stage-chip-dot" style="background:${stage.color}"></span>
       <span class="stage-chip-name">${esc(stage.name)}</span>
@@ -117,23 +117,11 @@ function stageRailSetActiveClasses(activeIndex){
   });
 }
 
-function stageRailIndicatorTo(index,animate=true){
-  const rail=document.getElementById('stageRail');
-  const indicator=rail?.querySelector('.stage-rail-indicator');
-  const chip=rail?.querySelector(`[data-stage-jump="${index}"]`);
-  if(!rail||!indicator||!chip)return;
-  rail.classList.toggle('stage-rail-instant',!animate);
-  indicator.style.width=`${chip.offsetWidth}px`;
-  indicator.style.transform=`translate3d(${chip.offsetLeft}px,0,0)`;
-  if(!animate)window.requestAnimationFrame(()=>rail.classList.remove('stage-rail-instant'));
-}
-
 function syncStageRail(ensureVisible=true,behavior='smooth',activeIndex=stagePreviewIndex??currentStage){
   const rail=document.getElementById('stageRail');
   if(!rail)return;
   const active=clampStageIndex(activeIndex);
   stageRailSetActiveClasses(active);
-  stageRailIndicatorTo(active,behavior==='smooth');
   if(!ensureVisible)return;
   const chip=rail.querySelector(`[data-stage-jump="${active}"]`);
   if(!chip)return;
@@ -146,19 +134,14 @@ function syncStageRail(ensureVisible=true,behavior='smooth',activeIndex=stagePre
 }
 
 function setStageRailProgress(originIndex,targetIndex,progress){
-  const rail=document.getElementById('stageRail');
-  const indicator=rail?.querySelector('.stage-rail-indicator');
-  const origin=rail?.querySelector(`[data-stage-jump="${originIndex}"]`);
-  const target=rail?.querySelector(`[data-stage-jump="${targetIndex}"]`);
-  if(!rail||!indicator||!origin||!target)return;
+  /* The stage page follows the finger continuously, but the selected status
+     remains attached to a real chip. There is deliberately no floating pill
+     between chips: the target chip becomes active only when the swipe is
+     committed on release. */
   const p=Math.max(0,Math.min(1,Number(progress)||0));
-  rail.classList.add('stage-rail-dragging');
-  const x=origin.offsetLeft+(target.offsetLeft-origin.offsetLeft)*p;
-  const width=origin.offsetWidth+(target.offsetWidth-origin.offsetWidth)*p;
-  indicator.style.width=`${width}px`;
-  indicator.style.transform=`translate3d(${x}px,0,0)`;
-  stagePreviewIndex=p>=.5?targetIndex:originIndex;
-  stageRailSetActiveClasses(stagePreviewIndex);
+  stagePreviewIndex=originIndex;
+  stageRailSetActiveClasses(originIndex);
+  return p;
 }
 
 function stagePageMarkup(index,slot){
@@ -231,8 +214,6 @@ function animateStageTo(targetIndex,fromDx=0){
   const target=clampStageIndex(targetIndex);
   if(target===currentStage){
     stagePreviewIndex=currentStage;
-    const rail=document.getElementById('stageRail');
-    rail?.classList.remove('stage-rail-dragging');
     syncStageRail(false,'smooth',currentStage);
     stageTransitionLockUntil=performance.now()+STAGE_SNAP_MS+40;
     const epoch=++stageMotionEpoch;
@@ -250,8 +231,6 @@ function animateStageTo(targetIndex,fromDx=0){
   const width=pageWidth();
   const finalX=direction>0?-width:width;
   stagePreviewIndex=target;
-  const rail=document.getElementById('stageRail');
-  rail?.classList.remove('stage-rail-dragging');
   syncStageRail(true,'smooth',target);
   stageTransitionLockUntil=performance.now()+STAGE_SNAP_MS+40;
   stageGestureActive=true;
@@ -491,8 +470,9 @@ track.addEventListener('click',e=>{
 
 /* Follow-the-finger stage gestures.
    The page transform is driven directly by the finger/mouse delta. On release
-   it springs to the adjacent stage or returns to the origin. The rail pill is
-   interpolated from the same progress, so content and status stay synchronous. */
+   it springs to the adjacent stage or returns to the origin. The top status
+   stays visually locked to a real chip during the drag and switches once,
+   immediately when the swipe is committed. */
 let gestureStarted=false;
 let gestureOriginStage=0;
 let gestureStartTime=0;
