@@ -72,7 +72,11 @@ class HttpCRMAdapter{
       throw new Error('CRM API returned an invalid state payload');
     }
     this.revision=String(payload.revision||'');
-    return {stages:normalizeStages(payload.stages),revision:this.revision};
+    return {
+      stages:normalizeStages(payload.stages),
+      rentalItems:Array.isArray(payload.rentalItems)?payload.rentalItems:null,
+      revision:this.revision
+    };
   }
   async save(snapshot){
     const payload=await this.request('/crm/state',{

@@ -1,6 +1,7 @@
 const CRMDataLayer={
   adapter:null,
   revision:'',
+  rentalItems:null,
   status:'idle',
   pendingSave:Promise.resolve(),
   dirty:false,
@@ -35,6 +36,7 @@ const CRMDataLayer={
     try{
       const loaded=await this.adapter.load(defaultStages);
       this.revision=loaded.revision||'';
+      this.rentalItems=Array.isArray(loaded.rentalItems)?loaded.rentalItems:null;
       this.status='ready';
       this.lastError=null;
       return normalizeStages(loaded.stages);
@@ -96,12 +98,14 @@ const CRMDataLayer={
           return {changed:false,skipped:false,stages:null,revision:this.revision};
         }
         this.revision=nextRevision;
+        this.rentalItems=Array.isArray(loaded.rentalItems)?loaded.rentalItems:this.rentalItems;
         this.status='ready';
         this.lastRefreshError=null;
         return {
           changed:true,
           skipped:false,
           stages:normalizeStages(loaded.stages),
+          rentalItems:Array.isArray(loaded.rentalItems)?loaded.rentalItems:null,
           revision:nextRevision
         };
       }catch(err){

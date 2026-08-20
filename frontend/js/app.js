@@ -38,6 +38,11 @@ function renderCRMCollections(){
   renderDynamicCalendar();
 }
 
+function applyRemoteRentalItems(nextItems,{allowEmpty=false}={}){
+  if(!Array.isArray(nextItems))return false;
+  return replaceRentalProducts(nextItems,{allowEmpty});
+}
+
 function activeCRMPageId(){
   return document.querySelector('.page.active')?.id||'eventsPage';
 }
@@ -90,7 +95,10 @@ async function refreshCRMFromServer(){
   crmBackgroundRefreshBusy=true;
   try{
     const result=await CRMDataLayer.refresh(stages);
-    if(result?.changed && Array.isArray(result.stages))applyRemoteCRMStages(result.stages);
+    if(result?.changed && Array.isArray(result.stages)){
+      if(Array.isArray(result.rentalItems))applyRemoteRentalItems(result.rentalItems,{allowEmpty:true});
+      applyRemoteCRMStages(result.stages);
+    }
   }finally{
     crmBackgroundRefreshBusy=false;
   }
@@ -129,6 +137,7 @@ async function bootstrapCRM(){
     }
     try{
       const loadedStages=await CRMDataLayer.init(stages);
+      if(Array.isArray(CRMDataLayer.rentalItems))applyRemoteRentalItems(CRMDataLayer.rentalItems,{allowEmpty:true});
       applyRemoteCRMStages(loadedStages);
     }catch(err){
       /* HTTP mode deliberately stays empty when the server cannot be loaded.
