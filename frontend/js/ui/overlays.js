@@ -371,22 +371,23 @@ function resetReminderEditor(){
   const alert=document.getElementById('reminderAlert');
   alert.hidden=true;alert.textContent='';
   document.getElementById('newReminderText').removeAttribute('aria-invalid');
+  document.getElementById('newReminderDate').removeAttribute('aria-invalid');
   document.querySelectorAll('.quick-times button').forEach(button=>button.classList.remove('active'));
 }
-function quickReminderTarget(event,label){
-  const offsets={'За 7 дней':7*24*60,'За 3 дня':3*24*60,'За 1 день':24*60,'За 3 часа':3*60,'За 1 час':60};
-  const minutes=offsets[String(label||'')];
-  const dateKey=dateKeyFromEventLabel(event?.date);
-  if(!minutes||!dateKey)return null;
-  const parts=dateKey.split('-').map(Number);
-  const time=/^\d{2}:\d{2}$/.test(event?.time||'')?event.time:'12:00';
-  const timeParts=time.split(':').map(Number);
-  const target=new Date(parts[0],parts[1]-1,parts[2],timeParts[0],timeParts[1]);
-  target.setMinutes(target.getMinutes()-minutes);
+function quickReminderTarget(label,now=new Date()){
+  const base=new Date(now.getTime());
   const pad=value=>String(value).padStart(2,'0');
+  const key=String(label||'').trim();
+  if(key==='Через 1 час')base.setMinutes(base.getMinutes()+60);
+  else{
+    const days={'Завтра':1,'Через 3 дня':3,'Через неделю':7}[key];
+    if(!days)return null;
+    base.setDate(base.getDate()+days);
+    base.setHours(10,0,0,0);
+  }
   return {
-    date:`${target.getFullYear()}-${pad(target.getMonth()+1)}-${pad(target.getDate())}`,
-    time:`${pad(target.getHours())}:${pad(target.getMinutes())}`
+    date:`${base.getFullYear()}-${pad(base.getMonth()+1)}-${pad(base.getDate())}`,
+    time:`${pad(base.getHours())}:${pad(base.getMinutes())}`
   };
 }
 function openReminderEditor(reminderId=''){
@@ -399,9 +400,6 @@ function openReminderEditor(reminderId=''){
     document.getElementById('newReminderText').value=reminder.text||'';
     document.getElementById('newReminderDate').value=reminder.date||'';
     document.getElementById('newReminderTime').value=reminder.time||'';
-    document.querySelectorAll('.quick-times button').forEach(button=>{
-      button.classList.toggle('active',button.textContent.trim()===(reminder.kind||''));
-    });
   }
   openModal(document.getElementById('reminderOverlay'));
 }
@@ -432,11 +430,19 @@ document.getElementById('saveReminder').addEventListener('click',async()=>{
     textInput.focus();
     return;
   }
-  const activeQuick=document.querySelector('.quick-times button.active');
+  const dateInput=document.getElementById('newReminderDate');
+  const date=dateInput.value||'';
+  if(!date){
+    const alert=document.getElementById('reminderAlert');
+    alert.textContent='Укажите дату напоминания.';alert.hidden=false;
+    dateInput.setAttribute('aria-invalid','true');
+    dateInput.focus();
+    return;
+  }
   const reminderDraft={
     text,
-    kind:activeQuick?activeQuick.textContent.trim():'CRM-напоминание',
-    date:document.getElementById('newReminderDate').value||'',
+    kind:'Telegram-напоминание',
+    date,
     time:document.getElementById('newReminderTime').value||''
   };
   const previous=e.reminderItems.map(item=>({...item}));
@@ -462,10 +468,17 @@ document.getElementById('saveReminder').addEventListener('click',async()=>{
 });
 document.querySelectorAll('.quick-times button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.quick-times button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-  const target=quickReminderTarget(selectedEvent(),b.textContent.trim());
-  if(!target){notify('Сначала укажите дату мероприятия');return;}
+  const target=quickReminderTarget(b.textContent.trim());
+  if(!target)return;
   document.getElementById('newReminderDate').value=target.date;
   document.getElementById('newReminderTime').value=target.time;
+  document.getElementById('newReminderDate').removeAttribute('aria-invalid');
+}));
+['newReminderDate','newReminderTime'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+  document.querySelectorAll('.quick-times button').forEach(x=>x.classList.remove('active'));
+  document.getElementById('newReminderDate').removeAttribute('aria-invalid');
+  const alert=document.getElementById('reminderAlert');
+  if(alert.textContent==='Укажите дату напоминания.'){alert.hidden=true;alert.textContent='';}
 }));
 function openNewEventSheet(){
   const plus=document.getElementById('newEventBtn');

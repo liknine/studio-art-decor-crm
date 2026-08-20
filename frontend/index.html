@@ -717,10 +717,10 @@
       <div class="new-event-alert" id="reminderAlert" role="status" aria-live="polite" hidden></div>
       <label>О чём напомнить<textarea id="newReminderText" placeholder="Например: подтвердить монтаж с клиентом"></textarea></label>
       <div>
-        <div class="helper" style="margin-bottom:6px">Быстрый интервал</div>
-        <div class="quick-times"><button>За 7 дней</button><button>За 3 дня</button><button>За 1 день</button><button>За 3 часа</button><button>За 1 час</button></div>
+        <div class="helper" style="margin-bottom:6px">Быстро</div>
+        <div class="quick-times"><button type="button" data-reminder-quick="hour">Через 1 час</button><button type="button" data-reminder-quick="tomorrow">Завтра</button><button type="button" data-reminder-quick="three-days">Через 3 дня</button><button type="button" data-reminder-quick="week">Через неделю</button></div>
       </div>
-      <div class="form-grid"><label>Дата<input id="newReminderDate" type="date"></label><label>Время<input id="newReminderTime" type="time"></label></div>
+      <div class="form-grid"><label>Дата<input id="newReminderDate" type="date" required></label><label>Время <span class="helper">необязательно</span><input id="newReminderTime" type="time"><span class="helper">Если пусто — бот напомнит в 10:00</span></label></div>
       <button class="save" id="saveReminder">Сохранить напоминание</button>
     </div>
   </section>

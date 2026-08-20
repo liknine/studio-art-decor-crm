@@ -217,7 +217,7 @@ function reminderDateLabel(reminder){
   if(!date)return time||'Без даты';
   const d=new Date(date+'T12:00:00');
   const label=new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short'}).format(d).replace('.','');
-  return label+(time?' · '+time:'');
+  return label+' · '+(time||'10:00');
 }
 function renderReminders(){
   const event=selectedEvent();
