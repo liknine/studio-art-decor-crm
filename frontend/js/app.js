@@ -29,38 +29,6 @@ if(crmAppRoot)crmAppRoot.inert=true;
 const CRM_BACKGROUND_REFRESH_MS=5000;
 let crmBackgroundRefreshTimer=0;
 let crmBackgroundRefreshBusy=false;
-let pendingRemoteCRMStages=null;
-let pendingRemoteCRMTimer=0;
-
-function stageUIIsBusy(){
-  return stageGestureActive || performance.now()<stageTransitionLockUntil;
-}
-
-function flushPendingRemoteCRMStages(){
-  if(!pendingRemoteCRMStages)return;
-  if(stageUIIsBusy()){
-    if(pendingRemoteCRMTimer)window.clearTimeout(pendingRemoteCRMTimer);
-    const delay=Math.max(40,Math.ceil(stageTransitionLockUntil-performance.now())+20);
-    pendingRemoteCRMTimer=window.setTimeout(()=>{
-      pendingRemoteCRMTimer=0;
-      flushPendingRemoteCRMStages();
-    },delay);
-    return;
-  }
-  if(pendingRemoteCRMTimer){window.clearTimeout(pendingRemoteCRMTimer);pendingRemoteCRMTimer=0;}
-  const next=pendingRemoteCRMStages;
-  pendingRemoteCRMStages=null;
-  applyRemoteCRMStages(next);
-}
-
-function applyOrDeferRemoteCRMStages(nextStages){
-  if(stageUIIsBusy()){
-    pendingRemoteCRMStages=nextStages;
-    flushPendingRemoteCRMStages();
-    return;
-  }
-  applyRemoteCRMStages(nextStages);
-}
 
 function renderCRMCollections(){
   renderTrack();
@@ -116,14 +84,13 @@ function applyRemoteCRMStages(nextStages){
 
 async function refreshCRMFromServer(){
   if(CRM_DATA_CONFIG.mode!=='http' || CRMDataLayer.status!=='ready' || CRMDataLayer.dirty)return;
-  if(stageGestureActive)return;
   if(document.visibilityState && document.visibilityState!=='visible')return;
   if(document.activeElement?.matches?.('input,textarea,select,[contenteditable="true"]'))return;
   if(crmBackgroundRefreshBusy)return;
   crmBackgroundRefreshBusy=true;
   try{
     const result=await CRMDataLayer.refresh(stages);
-    if(result?.changed && Array.isArray(result.stages))applyOrDeferRemoteCRMStages(result.stages);
+    if(result?.changed && Array.isArray(result.stages))applyRemoteCRMStages(result.stages);
   }finally{
     crmBackgroundRefreshBusy=false;
   }
