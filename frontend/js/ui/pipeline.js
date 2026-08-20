@@ -98,239 +98,172 @@ function renderStageRail(){
     </button>`).join('');
 }
 
-let stagePreviewIndex=null;
-let stageMotionTimer=0;
-let stageMotionEpoch=0;
-let stageTransitionEndHandler=null;
-const STAGE_SNAP_MS=340;
-
-function clampStageIndex(index){
-  return Math.max(0,Math.min(stages.length-1,Number(index)||0));
-}
-
-function stageRailSetActiveClasses(activeIndex){
+function syncStageRail(scrollIntoView=true){
   const rail=document.getElementById('stageRail');
   if(!rail)return;
-  rail.querySelectorAll('[data-stage-jump]').forEach((chip,index)=>{
-    const active=index===activeIndex;
+  [...rail.querySelectorAll('[data-stage-jump]')].forEach((chip,index)=>{
+    const active=index===currentStage;
     chip.classList.toggle('active',active);
     chip.setAttribute('aria-current',active?'step':'false');
   });
-}
-
-function ensureStageChipVisibleInstant(activeIndex){
-  const rail=document.getElementById('stageRail');
-  if(!rail)return;
-  const chip=rail.querySelector(`[data-stage-jump="${clampStageIndex(activeIndex)}"]`);
-  if(!chip)return;
-  const railRect=rail.getBoundingClientRect();
-  const chipRect=chip.getBoundingClientRect();
-  let delta=0;
-  if(chipRect.left<railRect.left+6)delta=chipRect.left-railRect.left-10;
-  else if(chipRect.right>railRect.right-6)delta=chipRect.right-railRect.right+10;
-  if(delta)rail.scrollLeft+=delta;
-}
-
-function syncStageRail(ensureVisible=true,_behavior='auto',activeIndex=stagePreviewIndex??currentStage){
-  const active=clampStageIndex(activeIndex);
-  /* Never animate the status rail itself. If a swipe reaches a chip that is
-     outside the viewport, reveal it atomically before changing selection so
-     the dark selected chip can never travel across the rail. */
-  if(ensureVisible)ensureStageChipVisibleInstant(active);
-  stageRailSetActiveClasses(active);
-}
-
-function setStageRailProgress(originIndex,_targetIndex,progress){
-  const p=Math.max(0,Math.min(1,Number(progress)||0));
-  stagePreviewIndex=originIndex;
-  stageRailSetActiveClasses(originIndex);
-  return p;
-}
-
-function stagePageMarkup(index){
-  const stage=stages[index];
-  if(!stage)return '';
-  const current=index===currentStage;
-  return `<section class="stage-page" data-index="${index}" data-active="${current?'true':'false'}" aria-hidden="${current?'false':'true'}" tabindex="${current?'0':'-1'}" style="--stage-page-x:${index*100}%">
-    <div class="stage-page-content">${stageHTML(stage,index)}</div>
-  </section>`;
-}
-
-function updateStagePageActivity(activeIndex=currentStage){
-  const active=clampStageIndex(activeIndex);
-  track.querySelectorAll('.stage-page').forEach(page=>{
-    const selected=Number(page.dataset.index)===active;
-    page.dataset.active=selected?'true':'false';
-    page.setAttribute('aria-hidden',selected?'false':'true');
-    page.tabIndex=selected?0:-1;
-  });
-}
-
-function setStageTrackPosition(baseIndex,dragPx=0,animate=false){
-  track.classList.toggle('stage-animating',animate);
-  track.style.setProperty('--stage-base-x',`${-clampStageIndex(baseIndex)*100}%`);
-  track.style.setProperty('--stage-drag-x',`${Number(dragPx).toFixed(2)}px`);
-}
-
-function renderStagePages(){
-  track.classList.remove('stage-single-page','stage-animating');
-  track.classList.add('stage-follow-finger','stage-persistent-pages');
-  track.innerHTML=stages.map((_,index)=>stagePageMarkup(index)).join('');
-  setStageTrackPosition(currentStage,0,false);
-  updateStagePageActivity(currentStage);
-}
-
-function clearStageMotionCompletion(){
-  if(stageMotionTimer){window.clearTimeout(stageMotionTimer);stageMotionTimer=0;}
-  if(stageTransitionEndHandler){
-    track.removeEventListener('transitionend',stageTransitionEndHandler);
-    stageTransitionEndHandler=null;
+  if(scrollIntoView){
+    const active=rail.querySelector(`[data-stage-jump="${currentStage}"]`);
+    active?.scrollIntoView({behavior:'auto',block:'nearest',inline:'center'});
   }
 }
 
-function completeStageMotion(targetIndex,epoch=stageMotionEpoch){
-  if(epoch!==stageMotionEpoch)return;
-  clearStageMotionCompletion();
-  currentStage=clampStageIndex(targetIndex);
-  stagePreviewIndex=null;
-  setStageTrackPosition(currentStage,0,false);
-  updateStagePageActivity(currentStage);
-  syncStageRail(true,'auto',currentStage);
-  stageGestureActive=false;
-  stageTransitionLockUntil=0;
-  window.setTimeout(()=>{suppressClick=false;flushPendingRemoteCRMStages();},60);
+function clearStageProgrammaticSync(){
+  if(stageProgrammaticTimer){clearTimeout(stageProgrammaticTimer);stageProgrammaticTimer=0;}
+  stageProgrammaticTarget=null;
 }
-
-function scheduleStageMotionCompletion(targetIndex,epoch){
-  clearStageMotionCompletion();
-  const finish=()=>completeStageMotion(targetIndex,epoch);
-  stageTransitionEndHandler=e=>{
-    if(e.target!==track || e.propertyName!=='transform')return;
-    finish();
-  };
-  track.addEventListener('transitionend',stageTransitionEndHandler);
-  stageMotionTimer=window.setTimeout(finish,STAGE_SNAP_MS+90);
-}
-
-function animateStageTo(targetIndex,fromDx=0,originIndex=currentStage){
-  const origin=clampStageIndex(originIndex);
-  const target=clampStageIndex(targetIndex);
-  const epoch=++stageMotionEpoch;
-  stageGestureActive=true;
-  suppressClick=true;
-  stageTransitionLockUntil=performance.now()+STAGE_SNAP_MS+90;
-  stagePreviewIndex=target;
-
-  /* The chip itself changes selection; the rail does not glide under it. */
-  syncStageRail(true,'auto',target);
-  if(target!==origin)crmHaptic('selection');
-
-  setStageTrackPosition(origin,fromDx,false);
-  void track.offsetWidth;
-  setStageTrackPosition(target,0,true);
-  scheduleStageMotionCompletion(target,epoch);
-}
-
-function syncStageViewport(_behavior='auto'){
-  if(track.scrollLeft)track.scrollLeft=0;
-  if(stageGestureActive)return;
-  setStageTrackPosition(currentStage,0,false);
-  updateStagePageActivity(currentStage);
-  syncStageRail(true,'auto',currentStage);
+function syncStageViewport(behavior='auto'){
+  if(nativeMobile){
+    const target=currentStage*pageWidth();
+    stageProgrammaticTarget=currentStage;
+    if(stageProgrammaticTimer)clearTimeout(stageProgrammaticTimer);
+    if(behavior==='smooth'){
+      track.scrollTo({left:target,behavior:'smooth'});
+      stageProgrammaticTimer=window.setTimeout(()=>{
+        track.scrollLeft=target;
+        stageProgrammaticTarget=null;
+        stageProgrammaticTimer=0;
+        syncStageRail(true);
+      },520);
+    }else{
+      track.scrollLeft=target;
+      stageProgrammaticTimer=window.setTimeout(()=>{
+        stageProgrammaticTarget=null;
+        stageProgrammaticTimer=0;
+        syncStageRail(true);
+      },80);
+    }
+  }else{
+    positionPages(0,behavior==='smooth');
+  }
+  syncStageRail(true);
 }
 
 function goToStage(index,behavior='smooth'){
-  const next=clampStageIndex(index);
-  if(stageGestureActive)return false;
-  if(next===currentStage){
-    syncStageRail(true,'auto',currentStage);
-    return false;
-  }
-  if(behavior!=='smooth'){
-    currentStage=next;
-    stagePreviewIndex=null;
-    setStageTrackPosition(currentStage,0,false);
-    updateStagePageActivity(currentStage);
-    syncStageRail(true,'auto',currentStage);
-    return true;
-  }
-  animateStageTo(next,0,currentStage);
-  return true;
+  const next=Math.max(0,Math.min(stages.length-1,Number(index)||0));
+  if(next===currentStage){syncStageRail(true);return;}
+  currentStage=next;
+  syncStageViewport(behavior);
+  crmHaptic('selection');
 }
 
 function renderTrack(){
-  clearStageMotionCompletion();
-  stageMotionEpoch++;
-  stagePreviewIndex=null;
-  stageGestureActive=false;
-  stageTransitionLockUntil=0;
+  track.innerHTML=stages.map((stage,index)=>
+    `<section class="stage-page" data-index="${index}">
+      ${stageHTML(stage,index)}
+    </section>`
+  ).join('');
+
   renderStageRail();
-  renderStagePages();
-  window.requestAnimationFrame(()=>syncStageRail(false,'auto',currentStage));
+  window.requestAnimationFrame(()=>syncStageViewport('auto'));
 }
 
 function pageWidth(){
-  return Math.max(1,frame.clientWidth||track.clientWidth||390);
+  return Math.max(1,track.clientWidth);
 }
 
-function stageGestureTarget(originStage,dx){
-  const direction=dx<0?1:dx>0?-1:0;
-  return clampStageIndex(originStage+direction);
+function pages(){
+  return [...track.querySelectorAll('.stage-page')];
+}
+let stageMotionRaf=0;
+let pendingStageOffset=0;
+
+function scheduleStagePosition(offset){
+  pendingStageOffset=offset;
+  if(stageMotionRaf)return;
+
+  stageMotionRaf=requestAnimationFrame(()=>{
+    stageMotionRaf=0;
+    positionPages(pendingStageOffset,false);
+  });
 }
 
-function stageDragDistance(originStage,dx,width=pageWidth()){
-  const raw=Math.max(-width,Math.min(width,Number(dx)||0));
-  const target=stageGestureTarget(originStage,raw);
-  if(target===originStage && raw!==0)return raw*.28;
-  return raw;
-}
-
-function stageSwipeProgress(dx,width=pageWidth()){
-  return Math.max(0,Math.min(1,Math.abs(Number(dx)||0)/Math.max(1,width)));
-}
-
-function stageSwipeTarget(originStage,dx,width=pageWidth(),elapsedMs=240){
-  const target=stageGestureTarget(originStage,dx);
-  if(target===originStage)return originStage;
-  const distance=Math.abs(Number(dx)||0);
-  const threshold=Math.min(84,Math.max(56,width*.18));
-  const velocity=distance/Math.max(1,Number(elapsedMs)||1);
-  if(distance>=threshold || (distance>=24 && velocity>=.48))return target;
-  return originStage;
-}
-
-function updateStageDrag(originStage,dx){
-  const width=pageWidth();
-  const effective=stageDragDistance(originStage,dx,width);
-  setStageTrackPosition(originStage,effective,false);
-  const target=stageGestureTarget(originStage,effective);
-  if(target===originStage){
-    stagePreviewIndex=originStage;
-    stageRailSetActiveClasses(originStage);
-    return effective;
+function cancelScheduledStagePosition(){
+  if(stageMotionRaf){
+    cancelAnimationFrame(stageMotionRaf);
+    stageMotionRaf=0;
   }
-  setStageRailProgress(originStage,target,stageSwipeProgress(effective,width));
-  return effective;
 }
 
-function positionPages(){
-  if(stageGestureActive)return;
-  setStageTrackPosition(currentStage,0,false);
-  updateStagePageActivity(currentStage);
-  syncStageRail(false,'auto',currentStage);
+
+function positionPages(dragOffset=0,animate=false){
+  const w=pageWidth();
+  const duration=animate?'440ms':'0ms';
+
+  pages().forEach((page,index)=>{
+    const x=(index-currentStage)*w+dragOffset;
+    const active=index===currentStage;
+
+    page.style.setProperty('--stage-x',x+'px');
+    page.style.setProperty('--stage-duration',duration);
+    page.style.setProperty('--stage-pe',active?'auto':'none');
+    page.setAttribute('aria-hidden',active?'false':'true');
+    page.tabIndex=active?0:-1;
+  });
+
+  if(animate){
+    window.setTimeout(()=>{
+      pages().forEach(page=>page.style.setProperty('--stage-duration','0ms'));
+    },470);
+  }
+  if(!dragging)syncStageRail(false);
 }
 
 function changeStage(dir){
   const next=currentStage+dir;
-  if(next<0 || next>=stages.length)return;
+
+  if(next<0 || next>=stages.length){
+    const edge=dir>0 ? -10 : 10;
+    if(!nativeMobile){
+      positionPages(edge,true);
+      window.setTimeout(()=>positionPages(0,true),110);
+    }
+    return;
+  }
+
   goToStage(next,'smooth');
 }
 
 document.getElementById('stageRail').addEventListener('click',e=>{
   const chip=e.target.closest('[data-stage-jump]');
-  if(!chip || stageGestureActive)return;
+  if(!chip)return;
   goToStage(Number(chip.dataset.stageJump),'smooth');
 });
+
+track.addEventListener('scroll',()=>{
+  if(!nativeMobile)return;
+  cancelAnimationFrame(stageScrollRaf);
+  stageScrollRaf=requestAnimationFrame(()=>{
+    if(stageProgrammaticTarget!==null){
+      const targetLeft=stageProgrammaticTarget*pageWidth();
+      if(Math.abs(track.scrollLeft-targetLeft)<=2){
+        currentStage=stageProgrammaticTarget;
+        clearStageProgrammaticSync();
+        syncStageRail(true);
+      }
+      return;
+    }
+    const idx=Math.round(track.scrollLeft/pageWidth());
+    const clamped=Math.max(0,Math.min(stages.length-1,idx));
+    if(clamped!==currentStage){
+      currentStage=clamped;
+      syncStageRail(true);
+    }
+  });
+},{passive:true});
+if('onscrollend' in window){
+  track.addEventListener('scrollend',()=>{
+    if(!nativeMobile)return;
+    const idx=Math.round(track.scrollLeft/pageWidth());
+    currentStage=Math.max(0,Math.min(stages.length-1,idx));
+    clearStageProgrammaticSync();
+    syncStageRail(true);
+  });
+}
 
 function stageActionName(name=''){
   const compact={
@@ -449,173 +382,244 @@ track.addEventListener('click',e=>{
   }
 });
 
-/* Follow-the-finger stage gestures.
-   The page transform is driven directly by the finger/mouse delta. On release
-   it springs to the adjacent stage or returns to the origin. The top status
-   stays visually locked to a real chip during the drag and switches once,
-   immediately when the swipe is committed. */
+/* Desktop mouse / pen drag. */
 let gestureStarted=false;
-let gestureOriginStage=0;
-let gestureStartTime=0;
-let gestureHorizontal=false;
-
-function beginStageGesture(originStage){
-  if(stageGestureActive)return false;
-  gestureOriginStage=originStage;
-  gestureStartTime=performance.now();
-  gestureHorizontal=false;
-  stageGestureActive=true;
-  stagePreviewIndex=originStage;
-  suppressClick=false;
-  track.classList.remove('stage-animating');
-  setStageTrackPosition(originStage,0,false);
-  syncStageRail(false,'auto',originStage);
-  return true;
-}
-
-function finishStageGesture(originStage,dx,startedAt,cancelled=false){
-  const elapsed=Math.max(1,performance.now()-startedAt);
-  const target=cancelled?originStage:stageSwipeTarget(originStage,dx,pageWidth(),elapsed);
-  const effective=stageDragDistance(originStage,dx,pageWidth());
-  suppressClick=suppressClick||Math.abs(dx)>8;
-  animateStageTo(target,effective,originStage);
-}
 
 frame.addEventListener('pointerdown',e=>{
   if(e.pointerType==='touch')return;
   if(e.pointerType==='mouse' && e.button!==0)return;
   if(e.target.closest('button,input,textarea,select,a'))return;
-  if(!beginStageGesture(currentStage))return;
+
   pointerId=e.pointerId;
   dragStartX=e.clientX;
   dragStartY=e.clientY;
   dragDx=0;
   dragDy=0;
-  gestureStarted=true;
   dragging=false;
-  try{frame.setPointerCapture?.(e.pointerId)}catch{}
+  gestureStarted=true;
+  suppressClick=false;
 });
 
 frame.addEventListener('pointermove',e=>{
   if(e.pointerType==='touch')return;
   if(!gestureStarted || e.pointerId!==pointerId)return;
+
   dragDx=e.clientX-dragStartX;
   dragDy=e.clientY-dragStartY;
-  if(!gestureHorizontal){
-    if(Math.abs(dragDx)>8 && Math.abs(dragDx)>Math.abs(dragDy)*1.12)gestureHorizontal=true;
-    else if(Math.abs(dragDy)>10 && Math.abs(dragDy)>Math.abs(dragDx))return;
+
+  const horizontal=
+    Math.abs(dragDx)>8 &&
+    Math.abs(dragDx)>Math.abs(dragDy)*1.15;
+
+  if(!dragging && horizontal){
+    dragging=true;
+    frame.classList.add('dragging');
+
+    try{frame.setPointerCapture(pointerId)}catch(_){}
   }
-  if(!gestureHorizontal)return;
-  dragging=true;
-  suppressClick=true;
+
+  if(!dragging)return;
+
   e.preventDefault();
-  updateStageDrag(gestureOriginStage,dragDx);
+
+  let dx=dragDx*.94;
+
+  if(
+    (currentStage===0 && dx>0) ||
+    (currentStage===stages.length-1 && dx<0)
+  ){
+    dx*=.18;
+  }
+
+  scheduleStagePosition(dx);
 });
 
-function finishPointerDrag(cancelled=false){
+function finishPointerDrag(e){
   if(!gestureStarted)return;
-  const origin=gestureOriginStage;
-  const dx=dragDx;
-  const started=gestureStartTime;
+
   gestureStarted=false;
+
+  if(dragging){
+    frame.classList.remove('dragging');
+    try{
+      if(pointerId!==null)frame.releasePointerCapture(pointerId);
+    }catch(_){}
+  }
+
   pointerId=null;
+
+  const horizontal=
+    Math.abs(dragDx)>Math.abs(dragDy)*1.05;
+
+  if(Math.abs(dragDx)>9){
+    suppressClick=true;
+    window.setTimeout(()=>suppressClick=false,250);
+  }
+
+  if(dragging && horizontal){
+    const threshold=Math.min(76,pageWidth()*.20);
+
+    if(Math.abs(dragDx)>=threshold){
+      currentStage=Math.max(
+        0,
+        Math.min(
+          stages.length-1,
+          currentStage+(dragDx<0?1:-1)
+        )
+      );
+    }
+
+    cancelScheduledStagePosition();
+    positionPages(0,true);
+  }
+
   dragging=false;
   dragDx=0;
   dragDy=0;
-  if(!gestureHorizontal){
-    stageGestureActive=false;
-    stagePreviewIndex=null;
-    syncStageRail(false,'auto',currentStage);
-    flushPendingRemoteCRMStages();
-    return;
-  }
-  finishStageGesture(origin,dx,started,cancelled);
+  syncStageRail(true);
 }
-frame.addEventListener('pointerup',()=>finishPointerDrag(false));
-frame.addEventListener('pointercancel',()=>finishPointerDrag(true));
 
+frame.addEventListener('pointerup',finishPointerDrag);
+frame.addEventListener('pointercancel',finishPointerDrag);
+
+/*
+  iPhone/iPad:
+  - vertical gesture is never prevented -> event list scrolls normally;
+  - only a clearly horizontal gesture becomes a status swipe.
+*/
 let touchActive=false;
 let touchHorizontal=false;
 let touchStartX=0;
 let touchStartY=0;
 let touchDx=0;
 let touchDy=0;
-let touchOriginStage=0;
-let touchStartTime=0;
 
 frame.addEventListener('touchstart',e=>{
+  if(nativeMobile)return;
   if(e.touches.length!==1)return;
   if(e.target.closest('button,input,textarea,select,a'))return;
-  if(!beginStageGesture(currentStage))return;
+
   const t=e.touches[0];
+
   touchActive=true;
   touchHorizontal=false;
   touchStartX=t.clientX;
   touchStartY=t.clientY;
   touchDx=0;
   touchDy=0;
-  touchOriginStage=currentStage;
-  touchStartTime=performance.now();
+  suppressClick=false;
 },{passive:true});
 
 frame.addEventListener('touchmove',e=>{
+  if(nativeMobile)return;
   if(!touchActive || e.touches.length!==1)return;
+
   const t=e.touches[0];
   touchDx=t.clientX-touchStartX;
   touchDy=t.clientY-touchStartY;
+
   if(!touchHorizontal){
-    if(Math.abs(touchDx)>8 && Math.abs(touchDx)>Math.abs(touchDy)*1.12)touchHorizontal=true;
-    else if(Math.abs(touchDy)>10 && Math.abs(touchDy)>Math.abs(touchDx))return;
+    if(
+      Math.abs(touchDx)>9 &&
+      Math.abs(touchDx)>Math.abs(touchDy)*1.15
+    ){
+      touchHorizontal=true;
+    }else if(
+      Math.abs(touchDy)>10 &&
+      Math.abs(touchDy)>Math.abs(touchDx)
+    ){
+      /* Vertical scroll belongs to .stage-page. */
+      return;
+    }
   }
+
   if(!touchHorizontal)return;
-  suppressClick=true;
+
   e.preventDefault();
-  updateStageDrag(touchOriginStage,touchDx);
+
+  let dx=touchDx*.94;
+
+  if(
+    (currentStage===0 && dx>0) ||
+    (currentStage===stages.length-1 && dx<0)
+  ){
+    dx*=.18;
+  }
+
+  scheduleStagePosition(dx);
 },{passive:false});
 
-function finishTouchSwipe(cancelled=false){
+function finishTouchSwipe(){
+  if(nativeMobile)return;
   if(!touchActive)return;
-  const origin=touchOriginStage;
-  const dx=touchDx;
-  const started=touchStartTime;
+
   touchActive=false;
-  touchDx=0;
-  touchDy=0;
+
   if(!touchHorizontal){
-    touchHorizontal=false;
-    stageGestureActive=false;
-    stagePreviewIndex=null;
-    syncStageRail(false,'auto',currentStage);
-    flushPendingRemoteCRMStages();
+    touchDx=0;
+    touchDy=0;
     return;
   }
+
+  const threshold=Math.min(70,pageWidth()*.18);
+
+  if(Math.abs(touchDx)>=threshold){
+    currentStage=Math.max(
+      0,
+      Math.min(
+        stages.length-1,
+        currentStage+(touchDx<0?1:-1)
+      )
+    );
+  }
+
+  suppressClick=true;
+  cancelScheduledStagePosition();
+  positionPages(0,true);
+
+  window.setTimeout(()=>suppressClick=false,330);
+
   touchHorizontal=false;
-  finishStageGesture(origin,dx,started,cancelled);
+  touchDx=0;
+  touchDy=0;
 }
-frame.addEventListener('touchend',()=>finishTouchSwipe(false),{passive:true});
-frame.addEventListener('touchcancel',()=>finishTouchSwipe(true),{passive:true});
+
+frame.addEventListener('touchend',finishTouchSwipe,{passive:true});
+frame.addEventListener('touchcancel',finishTouchSwipe,{passive:true});
 
 /* Horizontal trackpad gesture. */
 frame.addEventListener('wheel',e=>{
   if(wheelLock)return;
-  const horizontal=Math.abs(e.deltaX)>Math.abs(e.deltaY) && Math.abs(e.deltaX)>24;
-  const shifted=e.shiftKey && Math.abs(e.deltaY)>24;
+
+  const horizontal=
+    Math.abs(e.deltaX)>Math.abs(e.deltaY) &&
+    Math.abs(e.deltaX)>24;
+
+  const shifted=
+    e.shiftKey &&
+    Math.abs(e.deltaY)>24;
+
   if(horizontal || shifted){
     e.preventDefault();
     wheelLock=true;
     changeStage((horizontal?e.deltaX:e.deltaY)>0 ? 1 : -1);
-    window.setTimeout(()=>wheelLock=false,220);
+    window.setTimeout(()=>wheelLock=false,460);
   }
 },{passive:false});
 
 /* Keyboard fallback on desktop. */
 document.addEventListener('keydown',e=>{
-  if(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
+  if(
+    document.activeElement &&
+    /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)
+  ) return;
+
   if(!document.getElementById('eventsPage').classList.contains('active'))return;
+
   if(e.key==='ArrowRight')changeStage(1);
   if(e.key==='ArrowLeft')changeStage(-1);
 });
 
 window.addEventListener('resize',()=>{
-  window.requestAnimationFrame(()=>syncStageViewport('auto'));
+  window.requestAnimationFrame(()=>positionPages(0,false));
 });
