@@ -4025,3 +4025,81 @@ html[data-crm-loading="true"] #stageTrack{
 @media (prefers-reduced-motion:reduce){
   .stage-track.stage-follow-finger.stage-animating .stage-page{transition-duration:1ms !important}
 }
+
+/* ============================================================
+   v65 — stable follow-the-finger carousel + stationary status chips
+   All seven stage pages stay mounted on one persistent compositor track.
+   Stage changes animate only that track, so the DOM is never replaced at the
+   end of a swipe/tap. The status rail never smooth-scrolls programmatically;
+   the selected dark chip changes in place and cannot drift between buttons.
+   ============================================================ */
+.stage-rail{
+  scroll-snap-type:none !important;
+  scroll-behavior:auto !important;
+}
+.stage-chip,
+.stage-chip:active{
+  transform:none !important;
+}
+.stage-chip{
+  transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease,box-shadow 120ms ease !important;
+}
+.stage-frame{
+  overflow:hidden !important;
+  contain:layout paint style;
+}
+.stage-track.stage-follow-finger.stage-persistent-pages{
+  --stage-base-x:0%;
+  --stage-drag-x:0px;
+  position:relative !important;
+  display:block !important;
+  width:100% !important;
+  min-width:100% !important;
+  max-width:100% !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:visible !important;
+  contain:layout style !important;
+  transform:translate3d(calc(var(--stage-base-x) + var(--stage-drag-x)),0,0) !important;
+  transition:none !important;
+  will-change:transform !important;
+  backface-visibility:hidden !important;
+}
+.stage-track.stage-follow-finger.stage-persistent-pages.stage-animating{
+  transition:transform 340ms cubic-bezier(.18,.86,.24,1) !important;
+}
+.stage-track.stage-follow-finger.stage-persistent-pages .stage-page{
+  position:absolute !important;
+  inset:0 auto 0 var(--stage-page-x) !important;
+  display:block !important;
+  width:100% !important;
+  min-width:100% !important;
+  max-width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:100% !important;
+  margin:0 !important;
+  padding:0 0 4px !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  transform:none !important;
+  transition:none !important;
+  pointer-events:none !important;
+  backface-visibility:hidden !important;
+  will-change:auto !important;
+}
+.stage-track.stage-follow-finger.stage-persistent-pages .stage-page[data-active="true"]{
+  pointer-events:auto !important;
+}
+@media(max-width:600px){
+  .stage-track.stage-follow-finger.stage-persistent-pages{
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  .stage-track.stage-follow-finger.stage-persistent-pages.stage-animating{
+    transition-duration:1ms !important;
+  }
+}

@@ -101,7 +101,8 @@ function renderStageRail(){
 let stagePreviewIndex=null;
 let stageMotionTimer=0;
 let stageMotionEpoch=0;
-const STAGE_SNAP_MS=320;
+let stageTransitionEndHandler=null;
+const STAGE_SNAP_MS=340;
 
 function clampStageIndex(index){
   return Math.max(0,Math.min(stages.length-1,Number(index)||0));
@@ -117,171 +118,154 @@ function stageRailSetActiveClasses(activeIndex){
   });
 }
 
-function syncStageRail(ensureVisible=true,behavior='smooth',activeIndex=stagePreviewIndex??currentStage){
+function ensureStageChipVisibleInstant(activeIndex){
   const rail=document.getElementById('stageRail');
   if(!rail)return;
-  const active=clampStageIndex(activeIndex);
-  stageRailSetActiveClasses(active);
-  if(!ensureVisible)return;
-  const chip=rail.querySelector(`[data-stage-jump="${active}"]`);
+  const chip=rail.querySelector(`[data-stage-jump="${clampStageIndex(activeIndex)}"]`);
   if(!chip)return;
   const railRect=rail.getBoundingClientRect();
   const chipRect=chip.getBoundingClientRect();
   let delta=0;
   if(chipRect.left<railRect.left+6)delta=chipRect.left-railRect.left-10;
   else if(chipRect.right>railRect.right-6)delta=chipRect.right-railRect.right+10;
-  if(delta)rail.scrollBy({left:delta,behavior});
+  if(delta)rail.scrollLeft+=delta;
 }
 
-function setStageRailProgress(originIndex,targetIndex,progress){
-  /* The stage page follows the finger continuously, but the selected status
-     remains attached to a real chip. There is deliberately no floating pill
-     between chips: the target chip becomes active only when the swipe is
-     committed on release. */
+function syncStageRail(ensureVisible=true,_behavior='auto',activeIndex=stagePreviewIndex??currentStage){
+  const active=clampStageIndex(activeIndex);
+  /* Never animate the status rail itself. If a swipe reaches a chip that is
+     outside the viewport, reveal it atomically before changing selection so
+     the dark selected chip can never travel across the rail. */
+  if(ensureVisible)ensureStageChipVisibleInstant(active);
+  stageRailSetActiveClasses(active);
+}
+
+function setStageRailProgress(originIndex,_targetIndex,progress){
   const p=Math.max(0,Math.min(1,Number(progress)||0));
   stagePreviewIndex=originIndex;
   stageRailSetActiveClasses(originIndex);
   return p;
 }
 
-function stagePageMarkup(index,slot){
+function stagePageMarkup(index){
   const stage=stages[index];
   if(!stage)return '';
-  const current=slot==='current';
-  return `<section class="stage-page" data-index="${index}" data-slot="${slot}" aria-hidden="${current?'false':'true'}" tabindex="${current?'0':'-1'}">
+  const current=index===currentStage;
+  return `<section class="stage-page" data-index="${index}" data-active="${current?'true':'false'}" aria-hidden="${current?'false':'true'}" tabindex="${current?'0':'-1'}" style="--stage-page-x:${index*100}%">
     <div class="stage-page-content">${stageHTML(stage,index)}</div>
   </section>`;
 }
 
-function renderStageWindow(center=currentStage){
-  const current=clampStageIndex(center);
-  const pages=[];
-  if(current>0)pages.push(stagePageMarkup(current-1,'prev'));
-  pages.push(stagePageMarkup(current,'current'));
-  if(current<stages.length-1)pages.push(stagePageMarkup(current+1,'next'));
-  track.classList.remove('stage-single-page','stage-animating');
-  track.classList.add('stage-follow-finger');
-  track.style.setProperty('--stage-drag-x','0px');
-  track.innerHTML=pages.join('');
-}
-
-function ensureStageTargetPage(targetIndex){
-  const target=clampStageIndex(targetIndex);
-  const direction=target>currentStage?1:-1;
-  const currentPage=track.querySelector(`[data-index="${currentStage}"]`);
-  if(!currentPage){
-    renderStageWindow(currentStage);
-  }
+function updateStagePageActivity(activeIndex=currentStage){
+  const active=clampStageIndex(activeIndex);
   track.querySelectorAll('.stage-page').forEach(page=>{
-    const index=Number(page.dataset.index);
-    if(index!==currentStage && index!==target)page.remove();
+    const selected=Number(page.dataset.index)===active;
+    page.dataset.active=selected?'true':'false';
+    page.setAttribute('aria-hidden',selected?'false':'true');
+    page.tabIndex=selected?0:-1;
   });
-  const liveCurrent=track.querySelector(`[data-index="${currentStage}"]`);
-  if(liveCurrent){
-    liveCurrent.dataset.slot='current';
-    liveCurrent.setAttribute('aria-hidden','false');
-    liveCurrent.tabIndex=0;
-  }
-  let targetPage=track.querySelector(`[data-index="${target}"]`);
-  if(!targetPage){
-    track.insertAdjacentHTML(direction>0?'beforeend':'afterbegin',stagePageMarkup(target,direction>0?'next':'prev'));
-    targetPage=track.querySelector(`[data-index="${target}"]`);
-  }
-  if(targetPage){
-    targetPage.dataset.slot=direction>0?'next':'prev';
-    targetPage.setAttribute('aria-hidden','true');
-    targetPage.tabIndex=-1;
-  }
 }
 
-function setStageDragX(px,animate=false){
+function setStageTrackPosition(baseIndex,dragPx=0,animate=false){
   track.classList.toggle('stage-animating',animate);
-  track.style.setProperty('--stage-drag-x',`${Number(px).toFixed(2)}px`);
+  track.style.setProperty('--stage-base-x',`${-clampStageIndex(baseIndex)*100}%`);
+  track.style.setProperty('--stage-drag-x',`${Number(dragPx).toFixed(2)}px`);
 }
 
-function completeStageMotion(targetIndex){
+function renderStagePages(){
+  track.classList.remove('stage-single-page','stage-animating');
+  track.classList.add('stage-follow-finger','stage-persistent-pages');
+  track.innerHTML=stages.map((_,index)=>stagePageMarkup(index)).join('');
+  setStageTrackPosition(currentStage,0,false);
+  updateStagePageActivity(currentStage);
+}
+
+function clearStageMotionCompletion(){
   if(stageMotionTimer){window.clearTimeout(stageMotionTimer);stageMotionTimer=0;}
+  if(stageTransitionEndHandler){
+    track.removeEventListener('transitionend',stageTransitionEndHandler);
+    stageTransitionEndHandler=null;
+  }
+}
+
+function completeStageMotion(targetIndex,epoch=stageMotionEpoch){
+  if(epoch!==stageMotionEpoch)return;
+  clearStageMotionCompletion();
   currentStage=clampStageIndex(targetIndex);
   stagePreviewIndex=null;
-  renderStageWindow(currentStage);
+  setStageTrackPosition(currentStage,0,false);
+  updateStagePageActivity(currentStage);
   syncStageRail(true,'auto',currentStage);
   stageGestureActive=false;
   stageTransitionLockUntil=0;
-  window.setTimeout(()=>{suppressClick=false;flushPendingRemoteCRMStages();},70);
+  window.setTimeout(()=>{suppressClick=false;flushPendingRemoteCRMStages();},60);
 }
 
-function animateStageTo(targetIndex,fromDx=0){
+function scheduleStageMotionCompletion(targetIndex,epoch){
+  clearStageMotionCompletion();
+  const finish=()=>completeStageMotion(targetIndex,epoch);
+  stageTransitionEndHandler=e=>{
+    if(e.target!==track || e.propertyName!=='transform')return;
+    finish();
+  };
+  track.addEventListener('transitionend',stageTransitionEndHandler);
+  stageMotionTimer=window.setTimeout(finish,STAGE_SNAP_MS+90);
+}
+
+function animateStageTo(targetIndex,fromDx=0,originIndex=currentStage){
+  const origin=clampStageIndex(originIndex);
   const target=clampStageIndex(targetIndex);
-  if(target===currentStage){
-    stagePreviewIndex=currentStage;
-    syncStageRail(false,'smooth',currentStage);
-    stageTransitionLockUntil=performance.now()+STAGE_SNAP_MS+40;
-    const epoch=++stageMotionEpoch;
-    setStageDragX(fromDx,false);
-    void track.offsetWidth;
-    setStageDragX(0,true);
-    stageMotionTimer=window.setTimeout(()=>{
-      if(epoch!==stageMotionEpoch)return;
-      completeStageMotion(currentStage);
-    },STAGE_SNAP_MS+30);
-    return;
-  }
-  ensureStageTargetPage(target);
-  const direction=target>currentStage?1:-1;
-  const width=pageWidth();
-  const finalX=direction>0?-width:width;
-  stagePreviewIndex=target;
-  syncStageRail(true,'smooth',target);
-  stageTransitionLockUntil=performance.now()+STAGE_SNAP_MS+40;
-  stageGestureActive=true;
   const epoch=++stageMotionEpoch;
-  setStageDragX(fromDx,false);
+  stageGestureActive=true;
+  suppressClick=true;
+  stageTransitionLockUntil=performance.now()+STAGE_SNAP_MS+90;
+  stagePreviewIndex=target;
+
+  /* The chip itself changes selection; the rail does not glide under it. */
+  syncStageRail(true,'auto',target);
+  if(target!==origin)crmHaptic('selection');
+
+  setStageTrackPosition(origin,fromDx,false);
   void track.offsetWidth;
-  setStageDragX(finalX,true);
-  crmHaptic('selection');
-  stageMotionTimer=window.setTimeout(()=>{
-    if(epoch!==stageMotionEpoch)return;
-    completeStageMotion(target);
-  },STAGE_SNAP_MS+30);
+  setStageTrackPosition(target,0,true);
+  scheduleStageMotionCompletion(target,epoch);
 }
 
-function syncStageViewport(behavior='auto'){
+function syncStageViewport(_behavior='auto'){
   if(track.scrollLeft)track.scrollLeft=0;
   if(stageGestureActive)return;
-  const shown=track.querySelector('.stage-page[data-slot="current"]');
-  if(!shown || Number(shown.dataset.index)!==currentStage)renderStageWindow(currentStage);
-  syncStageRail(true,behavior==='smooth'?'smooth':'auto',currentStage);
+  setStageTrackPosition(currentStage,0,false);
+  updateStagePageActivity(currentStage);
+  syncStageRail(true,'auto',currentStage);
 }
 
 function goToStage(index,behavior='smooth'){
   const next=clampStageIndex(index);
   if(stageGestureActive)return false;
   if(next===currentStage){
-    syncStageRail(true,behavior==='smooth'?'smooth':'auto',currentStage);
+    syncStageRail(true,'auto',currentStage);
     return false;
   }
   if(behavior!=='smooth'){
     currentStage=next;
     stagePreviewIndex=null;
-    renderStageWindow(currentStage);
+    setStageTrackPosition(currentStage,0,false);
+    updateStagePageActivity(currentStage);
     syncStageRail(true,'auto',currentStage);
     return true;
   }
-  stageGestureActive=true;
-  suppressClick=true;
-  ensureStageTargetPage(next);
-  animateStageTo(next,0);
+  animateStageTo(next,0,currentStage);
   return true;
 }
 
 function renderTrack(){
-  stagePreviewIndex=null;
-  if(stageMotionTimer){window.clearTimeout(stageMotionTimer);stageMotionTimer=0;}
+  clearStageMotionCompletion();
   stageMotionEpoch++;
+  stagePreviewIndex=null;
   stageGestureActive=false;
   stageTransitionLockUntil=0;
   renderStageRail();
-  renderStageWindow(currentStage);
+  renderStagePages();
   window.requestAnimationFrame(()=>syncStageRail(false,'auto',currentStage));
 }
 
@@ -318,24 +302,21 @@ function stageSwipeTarget(originStage,dx,width=pageWidth(),elapsedMs=240){
 function updateStageDrag(originStage,dx){
   const width=pageWidth();
   const effective=stageDragDistance(originStage,dx,width);
-  setStageDragX(effective,false);
+  setStageTrackPosition(originStage,effective,false);
   const target=stageGestureTarget(originStage,effective);
   if(target===originStage){
     stagePreviewIndex=originStage;
-    syncStageRail(false,'auto',originStage);
+    stageRailSetActiveClasses(originStage);
     return effective;
   }
   setStageRailProgress(originStage,target,stageSwipeProgress(effective,width));
   return effective;
 }
 
-/* Compatibility entry point used by page/view code. The controlled carousel
-   always keeps current/adjacent stages in a three-slot transform window. */
 function positionPages(){
   if(stageGestureActive)return;
-  const shown=track.querySelector('.stage-page[data-slot="current"]');
-  if(!shown || Number(shown.dataset.index)!==currentStage)renderStageWindow(currentStage);
-  setStageDragX(0,false);
+  setStageTrackPosition(currentStage,0,false);
+  updateStagePageActivity(currentStage);
   syncStageRail(false,'auto',currentStage);
 }
 
@@ -487,7 +468,7 @@ function beginStageGesture(originStage){
   stagePreviewIndex=originStage;
   suppressClick=false;
   track.classList.remove('stage-animating');
-  setStageDragX(0,false);
+  setStageTrackPosition(originStage,0,false);
   syncStageRail(false,'auto',originStage);
   return true;
 }
@@ -497,7 +478,7 @@ function finishStageGesture(originStage,dx,startedAt,cancelled=false){
   const target=cancelled?originStage:stageSwipeTarget(originStage,dx,pageWidth(),elapsed);
   const effective=stageDragDistance(originStage,dx,pageWidth());
   suppressClick=suppressClick||Math.abs(dx)>8;
-  animateStageTo(target,effective);
+  animateStageTo(target,effective,originStage);
 }
 
 frame.addEventListener('pointerdown',e=>{
