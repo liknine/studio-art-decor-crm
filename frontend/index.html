@@ -720,7 +720,8 @@
         <div class="helper" style="margin-bottom:6px">Быстро</div>
         <div class="quick-times"><button type="button" data-reminder-quick="hour">Через 1 час</button><button type="button" data-reminder-quick="tomorrow">Завтра</button><button type="button" data-reminder-quick="three-days">Через 3 дня</button><button type="button" data-reminder-quick="week">Через неделю</button></div>
       </div>
-      <div class="form-grid"><label>Дата<input id="newReminderDate" type="date" required></label><label>Время <span class="helper">необязательно</span><input id="newReminderTime" type="time"><span class="helper">Если пусто — бот напомнит в 10:00</span></label></div>
+      <div class="form-grid reminder-date-grid"><label>Дата<input id="newReminderDate" type="date" required></label><label>Время<input id="newReminderTime" type="time"></label></div>
+      <div class="helper reminder-time-note">Время необязательно. Если оставить пустым — бот напомнит в 10:00.</div>
       <button class="save" id="saveReminder">Сохранить напоминание</button>
     </div>
   </section>

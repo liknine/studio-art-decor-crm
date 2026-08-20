@@ -421,6 +421,10 @@ svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.55;strok
 }
 .quick-times button.active{border-color:#bad0fa;background:#f4f8ff;color:#266df0}
 .helper{color:#8b8f95;font-size:11px;line-height:1.4;font-weight:500}
+.reminder-date-grid{align-items:start}
+.reminder-date-grid>label{min-width:0;align-content:start}
+.reminder-date-grid input{height:44px;min-height:44px;box-sizing:border-box}
+.reminder-time-note{margin-top:-3px;padding-left:1px}
 .save{width:100%;height:40px;border:0;border-radius:10px;background:#24262a;color:#fff;font-size:14px;font-weight:500}
 .catalog-list{display:grid;gap:8px}
 .catalog-row{
