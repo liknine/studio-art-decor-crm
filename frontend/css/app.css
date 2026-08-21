@@ -3856,3 +3856,60 @@ html[data-crm-loading="true"] #stageTrack{
     padding-bottom:calc(28px + max(8px,var(--crm-safe-bottom))) !important;
   }
 }
+
+
+/* Estimate add sheet v3: fixed controls + one explicit touch scroll region. */
+#addItemOverlay{
+  z-index:205 !important;
+  isolation:isolate;
+}
+#addItemOverlay .sheet{
+  position:relative;
+  z-index:1;
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  padding-top:8px !important;
+  padding-bottom:calc(14px + max(8px,var(--crm-safe-bottom))) !important;
+}
+#addItemOverlay .grab,
+#addItemOverlay .sheet-head{
+  flex:0 0 auto;
+}
+#addItemOverlay .sheet-head{
+  margin-bottom:6px !important;
+  background:#fff;
+}
+#addItemOverlay .catalog-list{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior-y:contain !important;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y !important;
+  scroll-behavior:auto !important;
+  padding-bottom:8px;
+}
+#addItemOverlay .estimate-special-list{
+  flex:0 0 auto;
+  margin-top:0 !important;
+  padding-top:7px !important;
+  padding-bottom:0 !important;
+  background:#fff;
+}
+@media(max-width:600px){
+  #addItemOverlay{
+    padding-top:max(8px,var(--crm-safe-top));
+    background:rgba(17,18,20,.24) !important;
+    backdrop-filter:blur(7px) !important;
+    -webkit-backdrop-filter:blur(7px) !important;
+  }
+  #addItemOverlay .sheet{
+    height:calc(var(--crm-visual-h,var(--crm-usable-height,100vh)) - var(--crm-safe-top) - 8px) !important;
+    max-height:calc(var(--crm-visual-h,var(--crm-usable-height,100vh)) - var(--crm-safe-top) - 8px) !important;
+    padding-left:calc(16px + var(--crm-safe-left)) !important;
+    padding-right:calc(16px + var(--crm-safe-right)) !important;
+  }
+}

@@ -357,16 +357,25 @@ document.getElementById('addProductToEstimate').addEventListener('click',()=>{
   populateProductPage();
   notify(`Добавлено в смету «${target.event.title}»`);
 });
-document.getElementById('addMoreBtn').addEventListener('click',()=>{renderCatalog();document.getElementById('addItemOverlay').classList.add('open')});
+function closeAddItemSheet(){closeModal(document.getElementById('addItemOverlay'));}
+function openAddItemSheet(){
+  renderCatalog();
+  const overlay=document.getElementById('addItemOverlay');
+  const list=document.getElementById('catalogList');
+  if(list)list.scrollTop=0;
+  openModal(overlay);
+}
+document.getElementById('addMoreBtn').addEventListener('click',openAddItemSheet);
 document.getElementById('catalogList').addEventListener('click',e=>{
   const b=e.target.closest('[data-catalog-add]');if(!b)return;
   const p=rentalProducts[Number(b.dataset.catalogAdd)];
   if(!addRentalProductToSelectedEstimate(p))return;
-  renderEstimate();document.getElementById('addItemOverlay').classList.remove('open');notify('Добавлено в смету');
+  renderEstimate();closeAddItemSheet();notify('Добавлено в смету');
 });
 document.getElementById('customItemBtn').addEventListener('click',()=>openNewEstimateItem('custom'));
 document.getElementById('extraExpenseBtn').addEventListener('click',()=>openNewEstimateItem('expense'));
-document.querySelector('.js-close-add').addEventListener('click',()=>document.getElementById('addItemOverlay').classList.remove('open'));
+document.querySelector('.js-close-add').addEventListener('click',closeAddItemSheet);
+document.getElementById('addItemOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAddItemSheet();});
 function resetReminderEditor(){
   editingReminderId='';
   document.getElementById('reminderOverlayTitle').textContent='Новое напоминание';
@@ -523,8 +532,8 @@ function openNewEstimateItem(kind){
   document.getElementById('saveEstimateItem').textContent='Добавить в смету';
   document.getElementById('deleteEstimateItem').hidden=true;
   syncEstimateEditProfit();
-  document.getElementById('addItemOverlay').classList.remove('open');
-  document.getElementById('estimateEditOverlay').classList.add('open');
+  closeModal(document.getElementById('addItemOverlay'));
+  openModal(document.getElementById('estimateEditOverlay'));
   requestAnimationFrame(()=>document.getElementById('estimateEditName').focus());
 }
 
