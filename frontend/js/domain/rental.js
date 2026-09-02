@@ -77,10 +77,12 @@ function addRentalProductToSelectedEstimate(product,eventOverride=null){
   const items=eventEstimate(event);
   const existing=items.find(x=>x.productId===product.id);
   const nextQty=(existing?Math.max(1,Number(existing.qty)||1):0)+1;
-  const availability=maxReservableForEvent(product,event);
-  if(nextQty>availability.max){
-    notify(`Доступно только ${availability.max} шт. на ${formatShortDateKey(availability.dateKey)}`);
-    return false;
+  if(eventBooking(event).status==='reserved'){
+    const availability=maxReservableForEvent(product,event);
+    if(nextQty>availability.max){
+      notify(`Доступно только ${availability.max} шт. на ${formatShortDateKey(availability.dateKey)}`);
+      return false;
+    }
   }
   if(existing){
     existing.qty=nextQty;

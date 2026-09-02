@@ -589,7 +589,7 @@ document.getElementById('saveEstimateItem').addEventListener('click',()=>{
   if(x.productId){
     const p=rentalProducts.find(product=>product.id===x.productId);
     const event=selectedEvent();
-    if(p&&event){
+    if(p&&event&&eventBooking(event).status==='reserved'){
       const availability=maxReservableForEvent(p,event);
       if(qty>availability.max){notify(`Доступно только ${availability.max} шт. на ${formatShortDateKey(availability.dateKey)}`);return;}
     }
